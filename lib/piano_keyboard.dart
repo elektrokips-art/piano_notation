@@ -28,6 +28,11 @@ class PianoKeyboard extends StatefulWidget {
   final int endMidi;
   final double height;
   final double whiteKeyWidth;
+  // Внешний контроллер скролла — чтобы можно было листать клавиатуру
+  // кнопками снаружи (см. example_usage.dart), а не перетаскиванием по
+  // клавишам: перетаскивание по клавишам уже занято глиссандо и конфликтует
+  // со скроллом (ноты залипают на полпути).
+  final ScrollController? scrollController;
 
   const PianoKeyboard({
     super.key,
@@ -37,6 +42,7 @@ class PianoKeyboard extends StatefulWidget {
     this.endMidi = 108, // C8
     this.height = 380,
     this.whiteKeyWidth = 54,
+    this.scrollController,
   });
 
   @override
@@ -44,13 +50,16 @@ class PianoKeyboard extends StatefulWidget {
 }
 
 class _PianoKeyboardState extends State<PianoKeyboard> {
-  final _scrollController = ScrollController();
+  ScrollController? _ownScrollController;
   final _pointerToMidi = <int, int>{};
   final Set<int> _activeMidis = {};
 
+  ScrollController get _scrollController =>
+      widget.scrollController ?? (_ownScrollController ??= ScrollController());
+
   @override
   void dispose() {
-    _scrollController.dispose();
+    _ownScrollController?.dispose();
     super.dispose();
   }
 
@@ -161,6 +170,9 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
         child: SingleChildScrollView(
           controller: _scrollController,
           scrollDirection: Axis.horizontal,
+          // Перетаскивание по клавишам — это глиссандо, не скролл. Листать
+          // клавиатуру можно только скроллбаром или кнопками снаружи.
+          physics: const NeverScrollableScrollPhysics(),
           child: Listener(
             behavior: HitTestBehavior.opaque,
             onPointerDown: (e) => _updatePointer(

@@ -25,6 +25,25 @@ class NotationExampleScreen extends ConsumerStatefulWidget {
 class _NotationExampleScreenState
     extends ConsumerState<NotationExampleScreen> {
   final _sound = PianoSound();
+  final _pianoScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _pianoScrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollPiano(double delta) {
+    final target = (_pianoScrollController.offset + delta).clamp(
+      _pianoScrollController.position.minScrollExtent,
+      _pianoScrollController.position.maxScrollExtent,
+    );
+    _pianoScrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
+  }
 
   void _onKeyDown(int midiPitch) {
     final settings = ref.read(appSettingsProvider);
@@ -135,6 +154,26 @@ class _NotationExampleScreenState
                       label: Text(lang.tr('sustainPedal')),
                     ),
                   ),
+                  Positioned(
+                    left: 16,
+                    bottom: 16,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FloatingActionButton.small(
+                          heroTag: 'pianoScrollLeft',
+                          onPressed: () => _scrollPiano(-300),
+                          child: const Icon(Icons.chevron_left),
+                        ),
+                        const SizedBox(width: 8),
+                        FloatingActionButton.small(
+                          heroTag: 'pianoScrollRight',
+                          onPressed: () => _scrollPiano(300),
+                          child: const Icon(Icons.chevron_right),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -144,6 +183,7 @@ class _NotationExampleScreenState
                 onKeyDown: _onKeyDown,
                 onKeyUp: _onKeyUp,
                 height: keyboardHeight,
+                scrollController: _pianoScrollController,
               ),
             ),
           ],

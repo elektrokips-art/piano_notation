@@ -39,6 +39,10 @@ class PianoKeyboard extends StatefulWidget {
   // физической клавиатурой компьютера — см. example_usage.dart) — тоже
   // подсвечиваются, чтобы визуально было видно, что клавиша звучит.
   final Set<int> externalActiveMidis;
+  // Ноты, которые сейчас нужно сыграть в режиме "играть по нотам" — не
+  // обычная подсветка, а мигающий цветной оверлей, отдельно от
+  // externalActiveMidis (иначе подсказку не отличить от простого нажатия).
+  final Set<int> practiceHintMidis;
 
   const PianoKeyboard({
     super.key,
@@ -50,6 +54,7 @@ class PianoKeyboard extends StatefulWidget {
     this.whiteKeyWidth = 54,
     this.scrollController,
     this.externalActiveMidis = const {},
+    this.practiceHintMidis = const {},
   });
 
   @override
@@ -154,6 +159,7 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
           isBlack: false,
           label: _noteName(midi),
           pressed: isPressed(midi),
+          hint: widget.practiceHintMidis.contains(midi),
         ),
     ];
 
@@ -167,6 +173,7 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
             isBlack: true,
             label: _noteName(b.midi),
             pressed: isPressed(b.midi),
+            hint: widget.practiceHintMidis.contains(b.midi),
           ),
         ),
     ];
@@ -365,6 +372,7 @@ class _PianoKey extends StatelessWidget {
   final bool isBlack;
   final String label;
   final bool pressed;
+  final bool hint;
 
   const _PianoKey({
     required this.width,
@@ -372,6 +380,7 @@ class _PianoKey extends StatelessWidget {
     required this.isBlack,
     required this.label,
     required this.pressed,
+    this.hint = false,
   });
 
   @override
@@ -381,25 +390,79 @@ class _PianoKey extends StatelessWidget {
     final labelColor = isBlack ? Colors.white70 : Colors.black54;
 
     return IgnorePointer(
-      child: Container(
+      child: SizedBox(
         width: width,
         height: height,
-        alignment: Alignment.bottomCenter,
-        padding: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: pressed ? pressedColor : restColor,
-          border: Border.all(color: Colors.black87, width: 1),
-          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: labelColor,
-            fontSize: isBlack ? 10 : 12,
-            fontWeight: FontWeight.w500,
-          ),
+        child: Stack(
+          children: [
+            Container(
+              width: width,
+              height: height,
+              alignment: Alignment.bottomCenter,
+              padding: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: pressed ? pressedColor : restColor,
+                border: Border.all(color: Colors.black87, width: 1),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: labelColor,
+                  fontSize: isBlack ? 10 : 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            if (hint) Positioned.fill(child: _BlinkingHint(width: width)),
+          ],
         ),
       ),
+    );
+  }
+}
+
+/// Мигающий цветной оверлей — какую клавишу сыграть в режиме "играть по
+/// нотам" (отдельно от обычной серой подсветки нажатия, чтобы подсказку
+/// точно было видно и не путать с уже зажатой клавишей).
+class _BlinkingHint extends StatefulWidget {
+  final double width;
+  const _BlinkingHint({required this.width});
+
+  @override
+  State<_BlinkingHint> createState() => _BlinkingHintState();
+}
+
+class _BlinkingHintState extends State<_BlinkingHint>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 550),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final alpha = 0.25 + 0.5 * _controller.value;
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.lightBlueAccent.withValues(alpha: alpha),
+            border: Border.all(
+              color: Colors.blueAccent.withValues(alpha: 0.6 + 0.4 * _controller.value),
+              width: 2,
+            ),
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
+          ),
+        );
+      },
     );
   }
 }

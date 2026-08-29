@@ -97,6 +97,21 @@ const _strings = <String, Map<AppLanguage, String>>{
     AppLanguage.uz: 'Chaling',
     AppLanguage.en: 'Play',
   },
+  'staffModeLabel': {
+    AppLanguage.ru: 'Нотный стан',
+    AppLanguage.uz: 'Notalar toʻri',
+    AppLanguage.en: 'Staff',
+  },
+  'staffModeSingle': {
+    AppLanguage.ru: 'Просто (1 ключ)',
+    AppLanguage.uz: 'Oddiy (1 kalit)',
+    AppLanguage.en: 'Simple (1 clef)',
+  },
+  'staffModeGrand': {
+    AppLanguage.ru: 'Про (2 руки)',
+    AppLanguage.uz: 'Pro (2 qoʻl)',
+    AppLanguage.en: 'Pro (2 hands)',
+  },
   'tempo': {
     AppLanguage.ru: 'Темп',
     AppLanguage.uz: 'Tezlik',

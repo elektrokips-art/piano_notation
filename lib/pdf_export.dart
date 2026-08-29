@@ -36,12 +36,13 @@ Future<Uint8List> renderStaffToPdf({
   required List<List<QuantizedNote>> measures,
   required int bpm,
   AppLanguage lang = AppLanguage.ru,
+  bool grandStaff = false,
 }) async {
-  final size = StaffPainter.computeSize(measures.length);
+  final size = StaffPainter.computeSize(measures.length, grandStaff: grandStaff);
 
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
-  StaffPainter(measures: measures, bpm: bpm).paint(canvas, size);
+  StaffPainter(measures: measures, bpm: bpm, grandStaff: grandStaff).paint(canvas, size);
   final picture = recorder.endRecording();
   final image = await picture.toImage(size.width.ceil(), size.height.ceil());
   final byteData = await image.toByteData(format: ui.ImageByteFormat.png);

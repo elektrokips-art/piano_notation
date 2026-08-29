@@ -308,10 +308,10 @@ class _NotationExampleScreenState
     }
   }
 
-  Future<void> _exportPdf(NotationState state, AppLanguage lang) async {
+  Future<void> _exportPdf(NotationState state, AppLanguage lang, bool grandStaff) async {
     if (state.measures == null || state.measures!.isEmpty) return;
     final bytes = await renderStaffToPdf(
-        measures: state.measures!, bpm: state.bpm, lang: lang);
+        measures: state.measures!, bpm: state.bpm, lang: lang, grandStaff: grandStaff);
     await Printing.sharePdf(bytes: bytes, filename: 'melody.pdf');
   }
 
@@ -409,7 +409,7 @@ class _NotationExampleScreenState
               icon: const Icon(Icons.picture_as_pdf),
               tooltip: lang.tr('exportPdf'),
               onPressed: (state.measures?.isNotEmpty ?? false)
-                  ? () => _exportPdf(state, lang)
+                  ? () => _exportPdf(state, lang, settings.staffMode == StaffMode.grand)
                   : null,
             ),
           ],
@@ -436,9 +436,13 @@ class _NotationExampleScreenState
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: CustomPaint(
-                                size: StaffPainter.computeSize(state.measures!.length),
+                                size: StaffPainter.computeSize(state.measures!.length,
+                                    grandStaff: settings.staffMode == StaffMode.grand),
                                 painter: StaffPainter(
-                                    measures: state.measures!, bpm: state.bpm),
+                                  measures: state.measures!,
+                                  bpm: state.bpm,
+                                  grandStaff: settings.staffMode == StaffMode.grand,
+                                ),
                               ),
                             ),
                           ),
@@ -529,7 +533,8 @@ class _NotationExampleScreenState
                         height: keyboardHeight,
                         whiteKeyWidth: _keyWidth,
                         scrollController: _pianoScrollController,
-                        externalActiveMidis: {..._physicalActiveMidis, ...expectedMidis},
+                        externalActiveMidis: _physicalActiveMidis,
+                        practiceHintMidis: expectedMidis,
                       ),
                     )
                   : const SizedBox(width: double.infinity),

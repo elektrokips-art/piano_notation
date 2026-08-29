@@ -73,6 +73,29 @@ class SettingsDrawer extends ConsumerWidget {
             ),
             ListTile(
               leading: Tooltip(
+                message: lang.tr('staffModeLabel'),
+                child: Icon(Icons.piano, color: Theme.of(context).colorScheme.primary),
+              ),
+              trailing: DropdownButton<StaffMode>(
+                value: settings.staffMode,
+                underline: const SizedBox.shrink(),
+                items: [
+                  DropdownMenuItem(
+                    value: StaffMode.single,
+                    child: Text(lang.tr('staffModeSingle')),
+                  ),
+                  DropdownMenuItem(
+                    value: StaffMode.grand,
+                    child: Text(lang.tr('staffModeGrand')),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) controller.setStaffMode(value);
+                },
+              ),
+            ),
+            ListTile(
+              leading: Tooltip(
                 message: lang.tr('soundStyle'),
                 child: Icon(Icons.music_note, color: Theme.of(context).colorScheme.primary),
               ),

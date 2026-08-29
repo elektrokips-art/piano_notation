@@ -33,8 +33,9 @@ class _OttavaRegion {
 class StaffPainter extends CustomPainter {
   final List<List<QuantizedNote>> measures;
   final int bpm;
+  final bool grandStaff;
 
-  StaffPainter({required this.measures, required this.bpm});
+  StaffPainter({required this.measures, required this.bpm, this.grandStaff = false});
 
   static const double spaceHeight = 12.0; // расстояние между линиями стана
   static const double stepPx = spaceHeight / 2;
@@ -42,9 +43,12 @@ class StaffPainter extends CustomPainter {
   static const int measuresPerLine = 3;
   static const double leftMargin = 82.0;
   static const double staffGap = 60.0; // между низом скрипичного и верхом басового стана
-  static const double lineGap = 230.0;
+  static const double lineGapGrand = 230.0;
+  static const double lineGapSingle = 130.0;
   static const double topMargin = 50.0;
   static const int trebleBassSplit = 60; // C4 (до первой октавы) и выше — скрипичный ключ
+
+  double get lineGap => grandStaff ? lineGapGrand : lineGapSingle;
 
   late final Paint _inkPaint = Paint()
     ..color = const Color(0xFF23222A)
@@ -65,41 +69,50 @@ class StaffPainter extends CustomPainter {
 
     for (var li = 0; li < lineCount; li++) {
       final trebleBottomY = topMargin + li * lineGap + spaceHeight * 4;
-      final bassBottomY = trebleBottomY + staffGap + spaceHeight * 4;
 
       _drawStaffLines(canvas, trebleBottomY, measureWidth);
-      _drawStaffLines(canvas, bassBottomY, measureWidth);
-
       _drawText(canvas, '𝄞', leftMargin - 70, trebleBottomY + 8, 46,
           fontFamily: 'NotoMusic');
-      _drawText(canvas, '𝄢', leftMargin - 68, bassBottomY - spaceHeight * 2 + 6, 30,
-          fontFamily: 'NotoMusic');
-
-      // размер такта — только на первой строке, на обоих станах
       if (li == 0) {
         _drawText(canvas, '4', leftMargin - 26, trebleBottomY - spaceHeight * 2 + 10, 20);
         _drawText(canvas, '4', leftMargin - 26, trebleBottomY + 8, 20);
-        _drawText(canvas, '4', leftMargin - 26, bassBottomY - spaceHeight * 2 + 10, 20);
-        _drawText(canvas, '4', leftMargin - 26, bassBottomY + 8, 20);
       }
-
-      _drawBrace(canvas, trebleBottomY - spaceHeight * 4, bassBottomY, leftMargin - 16);
 
       final lineMeasures =
           measures.skip(li * measuresPerLine).take(measuresPerLine).toList();
 
-      _drawClefSystem(canvas, trebleBottomY, lineMeasures, Clef.treble,
-          (p) => p >= trebleBassSplit);
-      _drawClefSystem(
-          canvas, bassBottomY, lineMeasures, Clef.bass, (p) => p < trebleBassSplit);
+      double bottomY = trebleBottomY;
+      if (grandStaff) {
+        final bassBottomY = trebleBottomY + staffGap + spaceHeight * 4;
+        bottomY = bassBottomY;
 
-      // Общая тактовая черта — через оба стана сразу, не по отдельности.
+        _drawStaffLines(canvas, bassBottomY, measureWidth);
+        _drawText(canvas, '𝄢', leftMargin - 68, bassBottomY - spaceHeight * 2 + 6, 30,
+            fontFamily: 'NotoMusic');
+        if (li == 0) {
+          _drawText(canvas, '4', leftMargin - 26, bassBottomY - spaceHeight * 2 + 10, 20);
+          _drawText(canvas, '4', leftMargin - 26, bassBottomY + 8, 20);
+        }
+
+        _drawBrace(canvas, trebleBottomY - spaceHeight * 4, bassBottomY, leftMargin - 16);
+
+        _drawClefSystem(canvas, trebleBottomY, lineMeasures, Clef.treble,
+            (p) => p >= trebleBassSplit);
+        _drawClefSystem(
+            canvas, bassBottomY, lineMeasures, Clef.bass, (p) => p < trebleBassSplit);
+      } else {
+        // Простой режим: один скрипичный ключ на все ноты, без разбора по
+        // рукам/регистру — легче читать новичку, играющему одной рукой.
+        _drawClefSystem(canvas, trebleBottomY, lineMeasures, Clef.treble, (p) => true);
+      }
+
+      // Общая тактовая черта — через все станы строки сразу.
       var mx = leftMargin;
       for (var m = 0; m < lineMeasures.length; m++) {
         mx += measureWidth;
         canvas.drawLine(
           Offset(mx, trebleBottomY - spaceHeight * 4),
-          Offset(mx, bassBottomY),
+          Offset(mx, bottomY),
           _inkPaint,
         );
       }
@@ -558,10 +571,11 @@ class StaffPainter extends CustomPainter {
 
   /// Итоговый размер канвы под текущее число тактов — используй в
   /// SizedBox/CustomPaint(size: ...) перед рендером.
-  static Size computeSize(int measureCount) {
+  static Size computeSize(int measureCount, {bool grandStaff = false}) {
     final lineCount = (measureCount / measuresPerLine).ceil().clamp(1, 999);
     final measureWidth = ticksPerMeasure * tickWidth;
     final width = leftMargin + measuresPerLine * measureWidth + 30;
+    final lineGap = grandStaff ? lineGapGrand : lineGapSingle;
     final height = topMargin + lineCount * lineGap + 40;
     return Size(width, height);
   }

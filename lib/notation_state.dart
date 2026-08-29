@@ -113,6 +113,15 @@ class NotationController extends Notifier<NotationState> {
     state = state.copyWith(measures: quantize(state.events, state.bpm));
   }
 
+  /// Темп записи — влияет на то, как сырое время между нажатиями переводится
+  /// в длительности нот (см. quantizer.dart). Если ребёнок играет медленнее
+  /// или быстрее заданных по умолчанию 90 уд/мин, без этой настройки ноты
+  /// посчитаются неверно даже при правильной раскладке балок.
+  void setBpm(int bpm) {
+    state = state.copyWith(bpm: bpm);
+    if (state.events.isNotEmpty) renderNotes();
+  }
+
   /// Загружает готовую пьесу (из PDF, см. notation_file.dart) на нотный
   /// стан — как результат renderNotes(), только без собственной записи.
   /// Используется режимом «играть по нотам» (см. practice_state.dart).

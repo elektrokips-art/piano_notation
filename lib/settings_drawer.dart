@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'app_settings.dart';
+import 'notation_state.dart';
 import 'tone_synth.dart';
 import 'translations.dart';
 
@@ -19,6 +20,8 @@ class SettingsDrawer extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider);
     final controller = ref.read(appSettingsProvider.notifier);
     final lang = settings.language;
+    final bpm = ref.watch(notationControllerProvider).bpm;
+    final notationController = ref.read(notationControllerProvider.notifier);
 
     return Drawer(
       child: SafeArea(
@@ -49,6 +52,24 @@ class SettingsDrawer extends ConsumerWidget {
                   if (value != null) controller.setLanguage(value);
                 },
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Row(
+                children: [
+                  Icon(Icons.speed, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(lang.tr('tempo'))),
+                  Text('$bpm'),
+                ],
+              ),
+            ),
+            Slider(
+              value: bpm.toDouble(),
+              min: 40,
+              max: 200,
+              divisions: 32,
+              onChanged: (value) => notationController.setBpm(value.round()),
             ),
             ListTile(
               leading: Tooltip(

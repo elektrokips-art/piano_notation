@@ -77,6 +77,11 @@ const _strings = <String, Map<AppLanguage, String>>{
     AppLanguage.uz: 'Ovoz',
     AppLanguage.en: 'Sound',
   },
+  'tempo': {
+    AppLanguage.ru: 'Темп',
+    AppLanguage.uz: 'Tezlik',
+    AppLanguage.en: 'Tempo',
+  },
   'openPiece': {
     AppLanguage.ru: 'Открыть пьесу (PDF)',
     AppLanguage.uz: 'Asar ochish (PDF)',

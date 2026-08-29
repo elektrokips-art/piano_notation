@@ -37,6 +37,21 @@ const _strings = <String, Map<AppLanguage, String>>{
     AppLanguage.uz: 'PDF eksport',
     AppLanguage.en: 'Export PDF',
   },
+  'savePdf': {
+    AppLanguage.ru: 'Сохранить PDF',
+    AppLanguage.uz: 'PDF ni saqlash',
+    AppLanguage.en: 'Save PDF',
+  },
+  'sharePdf': {
+    AppLanguage.ru: 'Поделиться PDF',
+    AppLanguage.uz: 'PDF ni ulashish',
+    AppLanguage.en: 'Share PDF',
+  },
+  'pdfSaved': {
+    AppLanguage.ru: 'PDF сохранён',
+    AppLanguage.uz: 'PDF saqlandi',
+    AppLanguage.en: 'PDF saved',
+  },
   'placeholder': {
     AppLanguage.ru: 'здесь появятся ноты после записи',
     AppLanguage.uz: 'yozuvdan keyin bu yerda notalar chiqadi',

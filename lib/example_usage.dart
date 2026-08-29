@@ -308,10 +308,33 @@ class _NotationExampleScreenState
     }
   }
 
-  Future<void> _exportPdf(NotationState state, AppLanguage lang, bool grandStaff) async {
-    if (state.measures == null || state.measures!.isEmpty) return;
-    final bytes = await renderStaffToPdf(
+  Future<Uint8List?> _buildPdf(NotationState state, AppLanguage lang, bool grandStaff) async {
+    if (state.measures == null || state.measures!.isEmpty) return null;
+    return renderStaffToPdf(
         measures: state.measures!, bpm: state.bpm, lang: lang, grandStaff: grandStaff);
+  }
+
+  /// Отдельно от «Поделиться»: пишет файл напрямую через системный диалог
+  /// сохранения, чтобы получить PDF в файловой системе устройства без
+  /// обходного пути через сторонний просмотрщик и его «сохранить копию».
+  Future<void> _savePdf(NotationState state, AppLanguage lang, bool grandStaff) async {
+    final bytes = await _buildPdf(state, lang, grandStaff);
+    if (bytes == null) return;
+    final uri = await FilePicker.saveFile(
+      fileName: 'melody.pdf',
+      bytes: bytes,
+      mimeType: 'application/pdf',
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (uri != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.tr('pdfSaved'))));
+    }
+  }
+
+  Future<void> _sharePdf(NotationState state, AppLanguage lang, bool grandStaff) async {
+    final bytes = await _buildPdf(state, lang, grandStaff);
+    if (bytes == null) return;
     await Printing.sharePdf(bytes: bytes, filename: 'melody.pdf');
   }
 
@@ -405,12 +428,29 @@ class _NotationExampleScreenState
                   ? null
                   : controller.reset,
             ),
-            IconButton(
+            PopupMenuButton<VoidCallback>(
               icon: const Icon(Icons.picture_as_pdf),
               tooltip: lang.tr('exportPdf'),
-              onPressed: (state.measures?.isNotEmpty ?? false)
-                  ? () => _exportPdf(state, lang, settings.staffMode == StaffMode.grand)
-                  : null,
+              enabled: state.measures?.isNotEmpty ?? false,
+              onSelected: (action) => action(),
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: () => _savePdf(state, lang, settings.staffMode == StaffMode.grand),
+                  child: Row(children: [
+                    const Icon(Icons.save_alt),
+                    const SizedBox(width: 12),
+                    Text(lang.tr('savePdf')),
+                  ]),
+                ),
+                PopupMenuItem(
+                  value: () => _sharePdf(state, lang, settings.staffMode == StaffMode.grand),
+                  child: Row(children: [
+                    const Icon(Icons.share),
+                    const SizedBox(width: 12),
+                    Text(lang.tr('sharePdf')),
+                  ]),
+                ),
+              ],
             ),
           ],
           Builder(

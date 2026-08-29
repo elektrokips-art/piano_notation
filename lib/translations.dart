@@ -77,6 +77,26 @@ const _strings = <String, Map<AppLanguage, String>>{
     AppLanguage.uz: 'Ovoz',
     AppLanguage.en: 'Sound',
   },
+  'play': {
+    AppLanguage.ru: 'Играть',
+    AppLanguage.uz: 'Ijro',
+    AppLanguage.en: 'Play',
+  },
+  'pause': {
+    AppLanguage.ru: 'Пауза',
+    AppLanguage.uz: 'Pauza',
+    AppLanguage.en: 'Pause',
+  },
+  'stopPlayback': {
+    AppLanguage.ru: 'Стоп (сначала)',
+    AppLanguage.uz: 'Toʻxtatish (boshidan)',
+    AppLanguage.en: 'Stop (restart)',
+  },
+  'practiceHint': {
+    AppLanguage.ru: 'Играйте',
+    AppLanguage.uz: 'Chaling',
+    AppLanguage.en: 'Play',
+  },
   'tempo': {
     AppLanguage.ru: 'Темп',
     AppLanguage.uz: 'Tezlik',

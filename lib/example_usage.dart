@@ -23,6 +23,12 @@ import 'piano_keyboard.dart';
 import 'piano_sound.dart';
 import 'translations.dart';
 
+String _noteName(int midi) {
+  final pos = staffPositionFor(midi);
+  final octave = (midi ~/ 12) - 1;
+  return '${pos.letter}${pos.sharp ? '♯' : ''}$octave';
+}
+
 /// Игра с физической клавиатуры компьютера (Windows/web, где нет пальцев на
 /// экране): нижний ряд — одна октава от C4, верхний ряд — следующая, чёрные
 /// клавиши — на цифрах/буквах над зазорами между белыми. Стандартная схема,
@@ -72,6 +78,7 @@ class _NotationExampleScreenState
   final _physicalKeysDown = <LogicalKeyboardKey>{};
   final _physicalActiveMidis = <int>{};
   final _heldMidis = <int>{}; // все сейчас зажатые клавиши (любым способом)
+  bool _practicePaused = false; // пауза в режиме "ждать клавишу"
   Timer? _autoPlayTimer;
   bool _autoPlaying = false;
 
@@ -173,6 +180,7 @@ class _NotationExampleScreenState
   // Тренажёр: как только зажатые клавиши совпали ровно с ожидаемой нотой
   // (или аккордом), переходим к следующей.
   void _checkPracticeMatch() {
+    if (_practicePaused) return;
     final practice = ref.read(practiceControllerProvider);
     final current = practice.current;
     if (current == null || current.isRest) return;
@@ -202,7 +210,8 @@ class _NotationExampleScreenState
       return;
     }
 
-    _stopAutoPlay();
+    _pauseAutoPlay();
+    setState(() => _practicePaused = false);
     if (ref.read(notationControllerProvider).recording) {
       ref.read(notationControllerProvider.notifier).toggleRecording();
     }
@@ -219,18 +228,32 @@ class _NotationExampleScreenState
   }
 
   void _closePractice() {
-    _stopAutoPlay();
+    _pauseAutoPlay();
+    setState(() => _practicePaused = false);
     ref.read(practiceControllerProvider.notifier).stop();
   }
 
-  void _stopAutoPlay() {
+  /// Пауза — останавливает таймер автоигры, но НЕ сбрасывает позицию: play
+  /// после паузы продолжит с того же места.
+  void _pauseAutoPlay() {
     _autoPlayTimer?.cancel();
     _autoPlayTimer = null;
     if (_autoPlaying) setState(() => _autoPlaying = false);
   }
 
+  /// Стоп — останавливает и возвращает пьесу к началу (в отличие от паузы).
+  void _stopAutoPlay() {
+    _pauseAutoPlay();
+    ref.read(practiceControllerProvider.notifier).restart();
+  }
+
   void _startAutoPlay() {
     if (!ref.read(practiceControllerProvider).active) return;
+    // Если пьеса доиграна до конца — начинаем заново, иначе play после
+    // завершения молча ничего не делал бы (current уже null).
+    if (ref.read(practiceControllerProvider).finished) {
+      ref.read(practiceControllerProvider.notifier).restart();
+    }
     setState(() => _autoPlaying = true);
     _scheduleAutoPlayStep();
   }
@@ -241,7 +264,8 @@ class _NotationExampleScreenState
     final notifier = ref.read(practiceControllerProvider.notifier);
 
     if (current == null) {
-      _stopAutoPlay();
+      _pauseAutoPlay();
+      notifier.restart(); // готовим play к чистому повторному запуску
       _showPracticeFinished();
       return;
     }
@@ -324,12 +348,35 @@ class _NotationExampleScreenState
             onPressed: () => setState(() => _keyboardVisible = !_keyboardVisible),
           ),
           if (practice.active) ...[
-            if (settings.practiceMode == PracticeMode.autoPlay)
+            if (settings.practiceMode == PracticeMode.autoPlay) ...[
               IconButton(
                 icon: Icon(_autoPlaying ? Icons.pause : Icons.play_arrow),
-                tooltip: _autoPlaying ? lang.tr('stop') : lang.tr('record'),
-                onPressed: _autoPlaying ? _stopAutoPlay : _startAutoPlay,
+                tooltip: _autoPlaying ? lang.tr('pause') : lang.tr('play'),
+                onPressed: _autoPlaying ? _pauseAutoPlay : _startAutoPlay,
               ),
+              IconButton(
+                icon: const Icon(Icons.stop),
+                tooltip: lang.tr('stopPlayback'),
+                onPressed: _stopAutoPlay,
+              ),
+            ] else ...[
+              // "Ждать клавишу": плей/пауза приостанавливает проверку
+              // нажатий (не сбрасывая позицию), стоп возвращает к началу.
+              IconButton(
+                icon: Icon(_practicePaused ? Icons.play_arrow : Icons.pause),
+                tooltip: _practicePaused ? lang.tr('play') : lang.tr('pause'),
+                onPressed: () =>
+                    setState(() => _practicePaused = !_practicePaused),
+              ),
+              IconButton(
+                icon: const Icon(Icons.stop),
+                tooltip: lang.tr('stopPlayback'),
+                onPressed: () {
+                  ref.read(practiceControllerProvider.notifier).restart();
+                  setState(() => _practicePaused = false);
+                },
+              ),
+            ],
             IconButton(
               icon: const Icon(Icons.close),
               tooltip: lang.tr('exitPractice'),
@@ -396,6 +443,37 @@ class _NotationExampleScreenState
                             ),
                           ),
                   ),
+                  if (practice.active)
+                    Positioned(
+                      top: 8,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            practice.finished
+                                ? lang.tr('practiceFinished')
+                                : practice.current == null
+                                    ? ''
+                                    : settings.practiceMode == PracticeMode.waitForKey &&
+                                            _practicePaused
+                                        ? '⏸ ${lang.tr('pause')}'
+                                        : '${lang.tr('practiceHint')}: '
+                                            '${practice.current!.midiPitches.map(_noteName).join(' + ')}'
+                                            '  ·  ${practice.index + 1}/${practice.notes.length}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ),
                   Positioned(
                     right: 16,
                     bottom: 0,

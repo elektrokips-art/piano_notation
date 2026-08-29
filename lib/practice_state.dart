@@ -41,23 +41,32 @@ class PracticeController extends Notifier<PracticeState> {
   PracticeState build() => const PracticeState();
 
   void load(List<List<QuantizedNote>> measures, int bpm) {
+    final notes = [for (final m in measures) ...m];
     state = PracticeState(
       active: true,
-      notes: [for (final m in measures) ...m],
+      notes: notes,
+      index: _firstNonRest(notes, 0),
       bpm: bpm,
     );
   }
 
   void stop() => state = const PracticeState();
 
+  /// Возвращает воспроизведение к началу пьесы, не выходя из тренажёра
+  /// (в отличие от [stop], который закрывает пьесу целиком) — кнопка
+  /// «Стоп» в транспорте автоигры/тренажёра.
+  void restart() => state = state.copyWith(index: _firstNonRest(state.notes, 0));
+
   /// Продвигает на следующую не-паузу — паузы в этом режиме не озвучиваются
   /// и не ждутся, они просто пропускаются автоматически.
-  void advance() {
-    var next = state.index + 1;
-    while (next < state.notes.length && state.notes[next].isRest) {
-      next++;
+  void advance() => state = state.copyWith(index: _firstNonRest(state.notes, state.index + 1));
+
+  static int _firstNonRest(List<QuantizedNote> notes, int from) {
+    var i = from;
+    while (i < notes.length && notes[i].isRest) {
+      i++;
     }
-    state = state.copyWith(index: next);
+    return i;
   }
 }
 

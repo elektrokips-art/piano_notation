@@ -121,16 +121,20 @@ class StaffPainter extends CustomPainter {
   static const _octavaLabels = {1: '8va', 2: '15ma', -1: '8vb', -2: '15mb'};
 
   /// Сколько октав сдвинуть отображение аккорда/ноты, чтобы уместиться в
-  /// разумных пределах добавочных линеек (0 — сдвиг не нужен).
+  /// разумных пределах добавочных линеек (0 — сдвиг не нужен). Дальше 15ma/
+  /// 15mb в реальной гравировке не уходят — очень низкие/высокие ноты
+  /// (например, партия левой руки на басах) по-хорошему нужен басовый ключ,
+  /// а не тройной знак октавы; пока рисуем как есть, просто ограничивая
+  /// сдвиг, чтобы не было абсурдных подписей вроде "22va".
   int _shiftFor(List<int> pitches) {
     final steps = pitches.map((p) => staffPositionFor(p).step);
     final maxStep = steps.reduce(math.max);
     final minStep = steps.reduce(math.min);
     if (maxStep > _highLedgerLimit) {
-      return ((maxStep - _highLedgerLimit) / 7).ceil();
+      return ((maxStep - _highLedgerLimit) / 7).ceil().clamp(0, 2);
     }
     if (minStep < _lowLedgerLimit) {
-      return -(((_lowLedgerLimit - minStep) / 7).ceil());
+      return -(((_lowLedgerLimit - minStep) / 7).ceil().clamp(0, 2));
     }
     return 0;
   }

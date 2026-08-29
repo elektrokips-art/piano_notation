@@ -1,5 +1,10 @@
-/// Позиция ноты на скрипичном ключе: step=0 — нижняя линия стана (E4),
-/// каждый следующий шаг — на пол-расстояния между линиями выше/ниже.
+/// Скрипичный или басовый ключ — от этого зависит, какая нота считается
+/// нижней линией стана (step=0), см. [staffPositionFor].
+enum Clef { treble, bass }
+
+/// Позиция ноты на стане: step=0 — нижняя линия стана (E4 для скрипичного
+/// ключа, G2 для басового), каждый следующий шаг — на пол-расстояния между
+/// линиями выше/ниже.
 class StaffPosition {
   final int step;
   final bool sharp;
@@ -21,13 +26,18 @@ const _pitchInfo = [
   ('A', true), ('B', false),
 ];
 
-StaffPosition staffPositionFor(int midiPitch) {
+// Опорная точка (нижняя линия стана, step=0): E4 для скрипичного ключа,
+// G2 для басового.
+const _trebleReferenceStep = 4 * 7 + 2; // E, октава 4
+const _bassReferenceStep = 2 * 7 + 4; // G, октава 2
+
+StaffPosition staffPositionFor(int midiPitch, [Clef clef = Clef.treble]) {
   final (letter, sharp) = _pitchInfo[midiPitch % 12];
   final octave = (midiPitch ~/ 12) - 1;
   final idx = _letterOrder.indexOf(letter);
   final absoluteStep = octave * 7 + idx;
-  // опорная точка: E4 (октава 4, буква E) = нижняя линия стана = step 0
-  const referenceStep = 4 * 7 + 2;
+  final referenceStep =
+      clef == Clef.treble ? _trebleReferenceStep : _bassReferenceStep;
   return StaffPosition(
     step: absoluteStep - referenceStep,
     sharp: sharp,

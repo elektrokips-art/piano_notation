@@ -190,6 +190,8 @@ class SettingsDrawer extends ConsumerWidget {
                               'Electric piano / synth samples: FluidR3 GM '
                               'SoundFont by Frank Wen (MIT)',
                             ),
+                            const SizedBox(height: 4),
+                            const Text('Clef font: Noto Music by Google (OFL)'),
                           ],
                         ),
                         actions: [

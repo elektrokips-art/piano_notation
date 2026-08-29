@@ -24,6 +24,12 @@ class _OttavaRegion {
   _OttavaRegion(this.startCx, this.endCx, this.shiftOctaves);
 }
 
+/// Рисует фортепианный гранд-стан: скрипичный ключ сверху, басовый снизу,
+/// соединены фигурной скобкой — как в настоящих нотах для фортепиано.
+/// Каждая нота/аккорд уходит на тот стан, к которому её высота ближе
+/// (от до́ первой октавы (C4) и выше — скрипичный, ниже — басовый); если
+/// аккорд захватывает обе стороны, он корректно распадается на две части
+/// на разных станах с одинаковым ритмом.
 class StaffPainter extends CustomPainter {
   final List<List<QuantizedNote>> measures;
   final int bpm;
@@ -34,9 +40,11 @@ class StaffPainter extends CustomPainter {
   static const double stepPx = spaceHeight / 2;
   static const double tickWidth = 17.0;
   static const int measuresPerLine = 3;
-  static const double leftMargin = 78.0;
-  static const double lineGap = 108.0;
-  static const double topMargin = 46.0;
+  static const double leftMargin = 82.0;
+  static const double staffGap = 60.0; // между низом скрипичного и верхом басового стана
+  static const double lineGap = 230.0;
+  static const double topMargin = 50.0;
+  static const int trebleBassSplit = 60; // C4 (до первой октавы) и выше — скрипичный ключ
 
   late final Paint _inkPaint = Paint()
     ..color = const Color(0xFF23222A)
@@ -56,63 +64,121 @@ class StaffPainter extends CustomPainter {
     final measureWidth = ticksPerMeasure * tickWidth;
 
     for (var li = 0; li < lineCount; li++) {
-      final staffBottomY = topMargin + li * lineGap + spaceHeight * 4;
+      final trebleBottomY = topMargin + li * lineGap + spaceHeight * 4;
+      final bassBottomY = trebleBottomY + staffGap + spaceHeight * 4;
 
-      // 5 линий стана
-      for (var l = 0; l < 5; l++) {
-        final y = staffBottomY - l * spaceHeight;
-        canvas.drawLine(
-          Offset(leftMargin - 10, y),
-          Offset(leftMargin + measuresPerLine * measureWidth, y),
-          _inkPaint,
-        );
-      }
+      _drawStaffLines(canvas, trebleBottomY, measureWidth);
+      _drawStaffLines(canvas, bassBottomY, measureWidth);
 
-      // скрипичный ключ
-      _drawText(canvas, '𝄞', leftMargin - 70, staffBottomY + 8, 48);
+      _drawText(canvas, '𝄞', leftMargin - 70, trebleBottomY + 8, 46,
+          fontFamily: 'NotoMusic');
+      _drawText(canvas, '𝄢', leftMargin - 68, bassBottomY - spaceHeight * 2 + 6, 30,
+          fontFamily: 'NotoMusic');
 
-      // размер такта — только на первой строке
+      // размер такта — только на первой строке, на обоих станах
       if (li == 0) {
-        _drawText(canvas, '4', leftMargin - 26, staffBottomY - spaceHeight * 2 + 10, 20);
-        _drawText(canvas, '4', leftMargin - 26, staffBottomY + 8, 20);
+        _drawText(canvas, '4', leftMargin - 26, trebleBottomY - spaceHeight * 2 + 10, 20);
+        _drawText(canvas, '4', leftMargin - 26, trebleBottomY + 8, 20);
+        _drawText(canvas, '4', leftMargin - 26, bassBottomY - spaceHeight * 2 + 10, 20);
+        _drawText(canvas, '4', leftMargin - 26, bassBottomY + 8, 20);
       }
 
-      final lineMeasures = measures.skip(li * measuresPerLine).take(measuresPerLine);
+      _drawBrace(canvas, trebleBottomY - spaceHeight * 4, bassBottomY, leftMargin - 16);
+
+      final lineMeasures =
+          measures.skip(li * measuresPerLine).take(measuresPerLine).toList();
+
+      _drawClefSystem(canvas, trebleBottomY, lineMeasures, Clef.treble,
+          (p) => p >= trebleBassSplit);
+      _drawClefSystem(
+          canvas, bassBottomY, lineMeasures, Clef.bass, (p) => p < trebleBassSplit);
+
+      // Общая тактовая черта — через оба стана сразу, не по отдельности.
       var mx = leftMargin;
-      final measureSlots = <List<_NoteSlot>>[];
-      for (final measure in lineMeasures) {
-        var tx = mx;
-        var cursor = 0;
-        final slots = <_NoteSlot>[];
-        for (final item in measure) {
-          final w = item.durationTicks * tickWidth;
-          slots.add(_NoteSlot(item, tx + w / 2, cursor ~/ ticksPerBeat));
-          tx += w;
-          cursor += item.durationTicks;
-        }
-        measureSlots.add(slots);
-        mx += measureWidth;
-      }
-
-      // Знаки 8va/15ma считаются по всей строке сразу — пассаж может
-      // тянуться через несколько тактов подряд, разбивать его по тактам
-      // отдельными значками было бы неправильно.
-      final lineSlots = measureSlots.expand((s) => s).toList();
-      final regions = _assignOttavaShifts(lineSlots);
-      for (final region in regions) {
-        _drawOttavaMark(canvas, staffBottomY, region);
-      }
-
-      mx = leftMargin;
-      for (final slots in measureSlots) {
-        _drawMeasureSlots(canvas, staffBottomY, slots);
+      for (var m = 0; m < lineMeasures.length; m++) {
         mx += measureWidth;
         canvas.drawLine(
-          Offset(mx, staffBottomY),
-          Offset(mx, staffBottomY - spaceHeight * 4),
+          Offset(mx, trebleBottomY - spaceHeight * 4),
+          Offset(mx, bassBottomY),
           _inkPaint,
         );
       }
+    }
+  }
+
+  void _drawStaffLines(Canvas canvas, double staffBottomY, double measureWidth) {
+    for (var l = 0; l < 5; l++) {
+      final y = staffBottomY - l * spaceHeight;
+      canvas.drawLine(
+        Offset(leftMargin - 10, y),
+        Offset(leftMargin + measuresPerLine * measureWidth, y),
+        _inkPaint,
+      );
+    }
+  }
+
+  /// Фигурная скобка слева, соединяющая скрипичный и басовый станы —
+  /// упрощённая (две дуги Безье), но узнаваемая.
+  void _drawBrace(Canvas canvas, double top, double bottom, double x) {
+    final mid = (top + bottom) / 2;
+    final path = Path()
+      ..moveTo(x + 3, top - 2)
+      ..quadraticBezierTo(x - 9, top + (mid - top) * 0.55, x - 3, mid)
+      ..quadraticBezierTo(x - 9, bottom - (bottom - mid) * 0.55, x + 3, bottom + 2);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF23222A)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2,
+    );
+  }
+
+  /// Рисует один стан (скрипичный либо басовый) для всех тактов строки:
+  /// каждую ноту/аккорд сначала фильтрует по [belongs] (принадлежность
+  /// этому стану по высоте), пустые после фильтрации ноты становятся
+  /// паузами — так расписание такта остаётся полным на обоих станах, даже
+  /// если реально играли только одной рукой.
+  void _drawClefSystem(
+    Canvas canvas,
+    double staffBottomY,
+    List<List<QuantizedNote>> lineMeasures,
+    Clef clef,
+    bool Function(int pitch) belongs,
+  ) {
+    final measureWidth = ticksPerMeasure * tickWidth;
+    var mx = leftMargin;
+    final measureSlots = <List<_NoteSlot>>[];
+    for (final measure in lineMeasures) {
+      var tx = mx;
+      var cursor = 0;
+      final slots = <_NoteSlot>[];
+      for (final item in measure) {
+        final w = item.durationTicks * tickWidth;
+        final split = QuantizedNote(
+          midiPitches: item.midiPitches.where(belongs).toList(),
+          startTick: item.startTick,
+          durationTicks: item.durationTicks,
+        );
+        slots.add(_NoteSlot(split, tx + w / 2, cursor ~/ ticksPerBeat));
+        tx += w;
+        cursor += item.durationTicks;
+      }
+      measureSlots.add(slots);
+      mx += measureWidth;
+    }
+
+    // Знаки 8va/15ma считаются по всей строке сразу — пассаж может тянуться
+    // через несколько тактов подряд, разбивать его по тактам отдельными
+    // значками было бы неправильно.
+    final lineSlots = measureSlots.expand((s) => s).toList();
+    final regions = _assignOttavaShifts(lineSlots, clef);
+    for (final region in regions) {
+      _drawOttavaMark(canvas, staffBottomY, region);
+    }
+
+    for (final slots in measureSlots) {
+      _drawMeasureSlots(canvas, staffBottomY, slots, clef);
     }
   }
 
@@ -122,12 +188,11 @@ class StaffPainter extends CustomPainter {
 
   /// Сколько октав сдвинуть отображение аккорда/ноты, чтобы уместиться в
   /// разумных пределах добавочных линеек (0 — сдвиг не нужен). Дальше 15ma/
-  /// 15mb в реальной гравировке не уходят — очень низкие/высокие ноты
-  /// (например, партия левой руки на басах) по-хорошему нужен басовый ключ,
-  /// а не тройной знак октавы; пока рисуем как есть, просто ограничивая
-  /// сдвиг, чтобы не было абсурдных подписей вроде "22va".
-  int _shiftFor(List<int> pitches) {
-    final steps = pitches.map((p) => staffPositionFor(p).step);
+  /// 15mb в реальной гравировке не уходят; для баса и дисканта это уже
+  /// редкость, поскольку сами ноты разложены по скрипичному/басовому
+  /// станам — сюда попадают только настоящие крайности рояля.
+  int _shiftFor(List<int> pitches, Clef clef) {
+    final steps = pitches.map((p) => staffPositionFor(p, clef).step);
     final maxStep = steps.reduce(math.max);
     final minStep = steps.reduce(math.min);
     if (maxStep > _highLedgerLimit) {
@@ -143,14 +208,14 @@ class StaffPainter extends CustomPainter {
   /// регионы под одним знаком 8va/15ma (пропуская паузы — они сдвига не
   /// требуют и разрыв пассажа не считается). Проставляет [_NoteSlot.
   /// shiftOctaves] и возвращает список регионов для отрисовки самого знака.
-  List<_OttavaRegion> _assignOttavaShifts(List<_NoteSlot> lineSlots) {
+  List<_OttavaRegion> _assignOttavaShifts(List<_NoteSlot> lineSlots, Clef clef) {
     final notes = [
       for (final s in lineSlots) if (!s.item.isRest) s,
     ];
     final regions = <_OttavaRegion>[];
     var i = 0;
     while (i < notes.length) {
-      final shift0 = _shiftFor(notes[i].item.midiPitches);
+      final shift0 = _shiftFor(notes[i].item.midiPitches, clef);
       if (shift0 == 0) {
         i++;
         continue;
@@ -159,7 +224,7 @@ class StaffPainter extends CustomPainter {
       var j = i;
       var maxAbs = 0;
       while (j < notes.length) {
-        final s = _shiftFor(notes[j].item.midiPitches);
+        final s = _shiftFor(notes[j].item.midiPitches, clef);
         if (s == 0 || s.sign != sign) break;
         if (s.abs() > maxAbs) maxAbs = s.abs();
         j++;
@@ -229,7 +294,8 @@ class StaffPainter extends CustomPainter {
   /// Разбирает такт на паузы, одиночные ноты и группы восьмых/шестнадцатых
   /// внутри одной доли (объединяются общей балкой вместо отдельных
   /// флажков — как в настоящей нотной гравировке).
-  void _drawMeasureSlots(Canvas canvas, double staffBottomY, List<_NoteSlot> slots) {
+  void _drawMeasureSlots(
+      Canvas canvas, double staffBottomY, List<_NoteSlot> slots, Clef clef) {
     var i = 0;
     while (i < slots.length) {
       final slot = slots[i];
@@ -240,7 +306,7 @@ class StaffPainter extends CustomPainter {
       }
       if (slot.item.durationTicks > 2) {
         _drawNote(canvas, slot.cx, staffBottomY, slot.item.midiPitches, slot.item.durationTicks,
-            shiftOctaves: slot.shiftOctaves);
+            clef: clef, shiftOctaves: slot.shiftOctaves);
         i++;
         continue;
       }
@@ -254,10 +320,10 @@ class StaffPainter extends CustomPainter {
         j++;
       }
       if (group.length >= 2) {
-        _drawBeamedGroup(canvas, staffBottomY, group);
+        _drawBeamedGroup(canvas, staffBottomY, group, clef);
       } else {
         _drawNote(canvas, slot.cx, staffBottomY, slot.item.midiPitches, slot.item.durationTicks,
-            shiftOctaves: slot.shiftOctaves);
+            clef: clef, shiftOctaves: slot.shiftOctaves);
       }
       i = j;
     }
@@ -266,32 +332,35 @@ class StaffPainter extends CustomPainter {
   /// Общее направление штиля для группы под балкой — как в настоящей
   /// гравировке, а не у каждой ноты своё: считаем средний ОТОБРАЖАЕМЫЙ шаг
   /// (с учётом сдвига 8va/15ma, если он есть) по всем нотам/аккордам группы.
-  bool _groupStemUp(List<_NoteSlot> group) {
+  bool _groupStemUp(List<_NoteSlot> group, Clef clef) {
     final steps = <int>[
       for (final slot in group)
         for (final p in slot.item.midiPitches)
-          staffPositionFor(p).step - slot.shiftOctaves * 7,
+          staffPositionFor(p, clef).step - slot.shiftOctaves * 7,
     ];
     return steps.reduce((a, b) => a + b) / steps.length < 4;
   }
 
-  double _cyFor(int pitch, int shiftOctaves, double staffBottomY) =>
-      staffBottomY - (staffPositionFor(pitch).step - shiftOctaves * 7) * stepPx;
+  double _cyFor(int pitch, int shiftOctaves, double staffBottomY, Clef clef) =>
+      staffBottomY - (staffPositionFor(pitch, clef).step - shiftOctaves * 7) * stepPx;
 
-  void _drawBeamedGroup(Canvas canvas, double staffBottomY, List<_NoteSlot> group) {
-    final stemUp = _groupStemUp(group);
+  void _drawBeamedGroup(
+      Canvas canvas, double staffBottomY, List<_NoteSlot> group, Clef clef) {
+    final stemUp = _groupStemUp(group, clef);
 
     // Плоская (негорбатая) балка — проще для восприятия, чем ступенчатая по
     // контуру мелодии, и её проще сделать корректно во всех случаях.
     double beamY;
     if (stemUp) {
       final minCy = group
-          .expand((s) => s.item.midiPitches.map((p) => _cyFor(p, s.shiftOctaves, staffBottomY)))
+          .expand((s) =>
+              s.item.midiPitches.map((p) => _cyFor(p, s.shiftOctaves, staffBottomY, clef)))
           .reduce(math.min);
       beamY = minCy - _stemLen;
     } else {
       final maxCy = group
-          .expand((s) => s.item.midiPitches.map((p) => _cyFor(p, s.shiftOctaves, staffBottomY)))
+          .expand((s) =>
+              s.item.midiPitches.map((p) => _cyFor(p, s.shiftOctaves, staffBottomY, clef)))
           .reduce(math.max);
       beamY = maxCy + _stemLen;
     }
@@ -303,6 +372,7 @@ class StaffPainter extends CustomPainter {
         staffBottomY,
         slot.item.midiPitches,
         slot.item.durationTicks,
+        clef: clef,
         shiftOctaves: slot.shiftOctaves,
         forcedStemUp: stemUp,
         forcedStemTopY: beamY,
@@ -343,12 +413,13 @@ class StaffPainter extends CustomPainter {
     double staffBottomY,
     List<int> pitches,
     int durTicks, {
+    required Clef clef,
     int shiftOctaves = 0,
     bool? forcedStemUp,
     double? forcedStemTopY,
     bool drawFlags = true,
   }) {
-    final positions = pitches.map(staffPositionFor).toList();
+    final positions = pitches.map((p) => staffPositionFor(p, clef)).toList();
     // Отображаемый шаг — с поправкой на 8va/15ma: сама позиция на стане
     // рисуется так, будто нота на shiftOctaves октав(ы) ближе к стану, а
     // знак сверху/снизу говорит читать её на самом деле выше/ниже.
@@ -469,14 +540,15 @@ class StaffPainter extends CustomPainter {
     }
   }
 
-  void _drawText(Canvas canvas, String text, double x, double y, double fontSize) {
+  void _drawText(Canvas canvas, String text, double x, double y, double fontSize,
+      {String fontFamily = 'Georgia'}) {
     final painter = TextPainter(
       text: TextSpan(
         text: text,
         style: TextStyle(
           color: const Color(0xFF23222A),
           fontSize: fontSize,
-          fontFamily: 'Georgia',
+          fontFamily: fontFamily,
         ),
       ),
       textDirection: TextDirection.ltr,

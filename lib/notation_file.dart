@@ -44,20 +44,31 @@ NotationFile? notationFromJson(Object? json) {
   try {
     final bpm = json['bpm'] as int;
     final rawMeasures = json['measures'] as List;
-    final measures = <List<QuantizedNote>>[
-      for (final rawMeasure in rawMeasures)
-        [
-          for (final rawNote in rawMeasure as List)
-            QuantizedNote(
-              midiPitches: [
-                for (final p in (rawNote as Map)['p'] as List? ?? const [])
-                  p as int,
-              ],
-              startTick: 0, // не используется при отрисовке/воспроизведении
-              durationTicks: rawNote['d'] as int,
-            ),
-        ],
-    ];
+    // startTick в JSON не хранится (не нужен для отрисовки), но его можно
+    // точно восстановить: это просто нарастающая сумма длительностей нот в
+    // том же порядке, в котором их изначально построил quantizer.dart —
+    // именно так режим "играть по нотам" узнаёт, что нота, обрезанная на
+    // границе такта и продолженная той же высотой в начале следующего,
+    // на самом деле одна и та же сыгранная нота (см. practice_state.dart
+    // _mergeTiedNotes), а не две, которые нужно нажимать по отдельности.
+    var cursor = 0;
+    final measures = <List<QuantizedNote>>[];
+    for (final rawMeasure in rawMeasures) {
+      final measure = <QuantizedNote>[];
+      for (final rawNote in rawMeasure as List) {
+        final map = rawNote as Map;
+        final duration = map['d'] as int;
+        measure.add(QuantizedNote(
+          midiPitches: [
+            for (final p in map['p'] as List? ?? const []) p as int,
+          ],
+          startTick: cursor,
+          durationTicks: duration,
+        ));
+        cursor += duration;
+      }
+      measures.add(measure);
+    }
     return NotationFile(bpm: bpm, measures: measures);
   } catch (_) {
     return null;

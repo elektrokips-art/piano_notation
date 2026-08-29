@@ -10,6 +10,11 @@ int nearestDuration(int ticks) {
   );
 }
 
+/// Наибольшая разрешённая длительность, не превышающая [maxTicks].
+int _largestFitting(int maxTicks) {
+  return allowedDurations.lastWhere((x) => x <= maxTicks, orElse: () => 1);
+}
+
 class _Cluster {
   final int startTick;
   final List<int> pitches;
@@ -21,6 +26,12 @@ class _Cluster {
 /// Ноты, нажатые одновременно (попавшие в один и тот же тик), группируются
 /// в аккорд — одну запись с несколькими высотами и общей длительностью,
 /// так что игра несколькими пальцами сразу не портит тайминг тактов.
+///
+/// Ни нота, ни пауза никогда не пересекают границу такта: если сыгранная
+/// нота длиннее, чем осталось до конца такта, она обрывается на границе
+/// и (если реально звучала дольше) продолжается новой нотой той же высоты
+/// в начале следующего такта — без этого длинная нота визуально наезжала
+/// на соседний такт при отрисовке (такты рисуются фиксированной ширины).
 List<List<QuantizedNote>> quantize(List<NoteEvent> events, int bpm) {
   final withOff = events.where((e) => e.offTime != null).toList()
     ..sort((a, b) => a.onTime.compareTo(b.onTime));
@@ -52,34 +63,49 @@ List<List<QuantizedNote>> quantize(List<NoteEvent> events, int bpm) {
     }
   }
 
-  // обрезаем длительность так, чтобы нота/аккорд не заезжали на следующий
-  final clamped = <QuantizedNote>[];
+  // длительность каждого кластера, обрезанная так, чтобы не наехать
+  // на начало следующего кластера (границы такта учтём отдельно ниже)
+  final noteBudget = <int>[];
   for (var i = 0; i < clusters.length; i++) {
     final c = clusters[i];
-    final maxDur = i + 1 < clusters.length
+    final untilNext = i + 1 < clusters.length
         ? clusters[i + 1].startTick - c.startTick
         : c.rawDur;
-    final dur = maxDur < c.rawDur ? maxDur : c.rawDur;
-    clamped.add(QuantizedNote(
-      midiPitches: c.pitches..sort(),
-      startTick: c.startTick,
-      durationTicks: nearestDuration(dur < 1 ? 1 : dur),
-    ));
+    noteBudget.add((untilNext < c.rawDur ? untilNext : c.rawDur).clamp(1, 999));
   }
 
-  // заполняем паузами промежутки между нотами
+  // строим таймлайн (паузы + ноты) — каждый элемент строго внутри такта
   final timeline = <QuantizedNote>[];
   var cursor = 0;
-  for (final n in clamped) {
-    var gap = n.startTick - cursor;
-    while (gap > 0) {
-      final d = allowedDurations.lastWhere((x) => x <= gap, orElse: () => 1);
+  for (var i = 0; i < clusters.length; i++) {
+    final c = clusters[i];
+
+    // паузами заполняем промежуток до начала ноты, не пересекая такты
+    while (cursor < c.startTick) {
+      final untilMeasure = ticksPerMeasure - (cursor % ticksPerMeasure);
+      final untilNote = c.startTick - cursor;
+      final d =
+          _largestFitting(untilMeasure < untilNote ? untilMeasure : untilNote);
       timeline.add(QuantizedNote(startTick: cursor, durationTicks: d));
       cursor += d;
-      gap -= d;
     }
-    timeline.add(n);
-    cursor = n.startTick + n.durationTicks;
+
+    // сама нота/аккорд — не длиннее остатка такта; если не влезает целиком,
+    // обрезаем по границе такта и продолжаем в следующем
+    var remaining = noteBudget[i];
+    while (remaining > 0) {
+      final untilMeasure = ticksPerMeasure - (cursor % ticksPerMeasure);
+      final want = untilMeasure < remaining ? untilMeasure : remaining;
+      var d = nearestDuration(want);
+      if (d > untilMeasure) d = _largestFitting(untilMeasure);
+      timeline.add(QuantizedNote(
+        midiPitches: c.pitches,
+        startTick: cursor,
+        durationTicks: d,
+      ));
+      cursor += d;
+      remaining -= d;
+    }
   }
 
   // добиваем последний такт паузами
@@ -87,13 +113,14 @@ List<List<QuantizedNote>> quantize(List<NoteEvent> events, int bpm) {
       ((cursor / ticksPerMeasure).ceil() * ticksPerMeasure) - cursor;
   var pad = remainder;
   while (pad > 0) {
-    final d = allowedDurations.lastWhere((x) => x <= pad, orElse: () => 1);
+    final untilMeasure = ticksPerMeasure - (cursor % ticksPerMeasure);
+    final d = _largestFitting(untilMeasure < pad ? untilMeasure : pad);
     timeline.add(QuantizedNote(startTick: cursor, durationTicks: d));
     cursor += d;
     pad -= d;
   }
 
-  // режем таймлайн на такты по ticksPerMeasure
+  // режем таймлайн на такты по ticksPerMeasure — теперь без переполнений
   final measures = <List<QuantizedNote>>[];
   var measure = <QuantizedNote>[];
   var measureTicks = 0;

@@ -12,7 +12,6 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 const _languageKey = 'settings.language';
 const _themeModeKey = 'settings.themeMode';
 const _soundStyleKey = 'settings.soundStyle';
-const _soundDurationKey = 'settings.soundDuration';
 
 enum AppLanguage { ru, uz, en }
 
@@ -20,26 +19,22 @@ class AppSettings {
   final AppLanguage language;
   final ThemeMode themeMode;
   final ToneStyle soundStyle;
-  final double soundDuration; // множитель длительности звука, 0.4..2.0
 
   const AppSettings({
     this.language = AppLanguage.ru,
     this.themeMode = ThemeMode.light,
     this.soundStyle = ToneStyle.classicPiano,
-    this.soundDuration = 1.0,
   });
 
   AppSettings copyWith({
     AppLanguage? language,
     ThemeMode? themeMode,
     ToneStyle? soundStyle,
-    double? soundDuration,
   }) {
     return AppSettings(
       language: language ?? this.language,
       themeMode: themeMode ?? this.themeMode,
       soundStyle: soundStyle ?? this.soundStyle,
-      soundDuration: soundDuration ?? this.soundDuration,
     );
   }
 }
@@ -53,7 +48,6 @@ class AppSettingsController extends Notifier<AppSettings> {
       themeMode: _enumFromPrefs(prefs, _themeModeKey, ThemeMode.values, ThemeMode.light),
       soundStyle:
           _enumFromPrefs(prefs, _soundStyleKey, ToneStyle.values, ToneStyle.classicPiano),
-      soundDuration: prefs.getDouble(_soundDurationKey) ?? 1.0,
     );
   }
 
@@ -80,11 +74,6 @@ class AppSettingsController extends Notifier<AppSettings> {
   void setSoundStyle(ToneStyle style) {
     state = state.copyWith(soundStyle: style);
     ref.read(sharedPreferencesProvider).setInt(_soundStyleKey, style.index);
-  }
-
-  void setSoundDuration(double value) {
-    state = state.copyWith(soundDuration: value);
-    ref.read(sharedPreferencesProvider).setDouble(_soundDurationKey, value);
   }
 }
 

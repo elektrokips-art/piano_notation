@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app_settings.dart';
@@ -6,6 +7,11 @@ import 'example_usage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Клавиатура широкая, приложению нужен альбомный режим — на Android это
+  // уже задано в AndroidManifest.xml (без задержки/мелькания портрета при
+  // запуске), а здесь то же самое для остальных платформ (iOS/web/desktop).
+  await SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
   final prefs = await SharedPreferences.getInstance();
   runApp(ProviderScope(
     overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],

@@ -30,6 +30,23 @@ dependencies:
         → StaffPainter (экран) / renderStaffToPdf (файл)
 ```
 
+## Благодарности
+
+Приложение бесплатное для музыкальных школ и использует только сэмплы с
+открытой лицензией:
+
+- **Пианино** — [Salamander Grand Piano V3](https://archive.org/details/SalamanderGrandPianoV3)
+  Александра Холма (Alexander Holm), лицензия CC BY 3.0. Mp3-версия — из пакета
+  [samples-piano-mp3](https://github.com/darosh/samples-piano-mp3) (Jan Forst).
+- **Электропиано / синтезатор** — [FluidR3 GM SoundFont](http://www.synthfont.com/SoundFonts/FluidR3_GM.sfArk)
+  Фрэнка Вена (Frank Wen), лицензия MIT. Mp3-конвертация — пакет
+  [soundfont-for-samplers](https://www.npmjs.com/package/soundfont-for-samplers)
+  (K.G.Studio, MIT), по методике [midi-js-soundfonts](https://github.com/gleitz/midi-js-soundfonts)
+  Бенджамина Гляйцмана (Benjamin Gleitzman).
+
+Спасибо всем троим — без их открытых записей это приложение звучало бы
+гораздо хуже.
+
 ## Известные упрощения MVP
 
 - монофония — предполагается одна нота одновременно (для полифонии

@@ -26,28 +26,33 @@ class _NotationExampleScreenState
     extends ConsumerState<NotationExampleScreen> {
   final _sound = PianoSound();
   final _pianoScrollController = ScrollController();
+  double _keyWidth = 54;
+
+  static const _minKeyWidth = 32.0;
+  static const _maxKeyWidth = 90.0;
+
+  void _zoomKeys(double delta) {
+    setState(() {
+      _keyWidth = (_keyWidth + delta).clamp(_minKeyWidth, _maxKeyWidth);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _sound.preload();
+  }
 
   @override
   void dispose() {
     _pianoScrollController.dispose();
+    _sound.dispose();
     super.dispose();
-  }
-
-  void _scrollPiano(double delta) {
-    final target = (_pianoScrollController.offset + delta).clamp(
-      _pianoScrollController.position.minScrollExtent,
-      _pianoScrollController.position.maxScrollExtent,
-    );
-    _pianoScrollController.animateTo(
-      target,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
-    );
   }
 
   void _onKeyDown(int midiPitch) {
     final settings = ref.read(appSettingsProvider);
-    _sound.noteDown(midiPitch, settings.soundStyle, settings.soundDuration);
+    _sound.noteDown(midiPitch, settings.soundStyle);
     ref.read(notationControllerProvider.notifier).noteOn(midiPitch);
   }
 
@@ -80,7 +85,7 @@ class _NotationExampleScreenState
     // В альбомной ориентации (короткий экран) клавиатура не должна съедать
     // всю высоту — иначе ноты сверху не помещаются.
     final screenHeight = MediaQuery.sizeOf(context).height;
-    final keyboardHeight = (screenHeight * 0.4).clamp(160.0, 380.0);
+    final keyboardHeight = (screenHeight * 0.46).clamp(185.0, 380.0);
 
     return Scaffold(
       appBar: AppBar(
@@ -143,15 +148,16 @@ class _NotationExampleScreenState
                   Positioned(
                     right: 16,
                     bottom: 16,
-                    child: FloatingActionButton.extended(
+                    child: FloatingActionButton.small(
+                      heroTag: 'sustainPedal',
                       onPressed: _onToggleSustain,
                       backgroundColor:
                           state.sustain ? Colors.red.shade400 : Colors.grey.shade300,
                       foregroundColor:
                           state.sustain ? Colors.white : Colors.black87,
                       elevation: state.sustain ? 6 : 2,
-                      icon: Icon(state.sustain ? Icons.circle : Icons.circle_outlined),
-                      label: Text(lang.tr('sustainPedal')),
+                      tooltip: lang.tr('sustainPedal'),
+                      child: Icon(state.sustain ? Icons.circle : Icons.circle_outlined),
                     ),
                   ),
                   Positioned(
@@ -161,15 +167,19 @@ class _NotationExampleScreenState
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         FloatingActionButton.small(
-                          heroTag: 'pianoScrollLeft',
-                          onPressed: () => _scrollPiano(-300),
-                          child: const Icon(Icons.chevron_left),
+                          heroTag: 'keyZoomOut',
+                          tooltip: lang.tr('keySizeSmaller'),
+                          onPressed:
+                              _keyWidth > _minKeyWidth ? () => _zoomKeys(-6) : null,
+                          child: const Icon(Icons.remove),
                         ),
                         const SizedBox(width: 8),
                         FloatingActionButton.small(
-                          heroTag: 'pianoScrollRight',
-                          onPressed: () => _scrollPiano(300),
-                          child: const Icon(Icons.chevron_right),
+                          heroTag: 'keyZoomIn',
+                          tooltip: lang.tr('keySizeBigger'),
+                          onPressed:
+                              _keyWidth < _maxKeyWidth ? () => _zoomKeys(6) : null,
+                          child: const Icon(Icons.add),
                         ),
                       ],
                     ),
@@ -178,11 +188,12 @@ class _NotationExampleScreenState
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 2),
               child: PianoKeyboard(
                 onKeyDown: _onKeyDown,
                 onKeyUp: _onKeyUp,
                 height: keyboardHeight,
+                whiteKeyWidth: _keyWidth,
                 scrollController: _pianoScrollController,
               ),
             ),

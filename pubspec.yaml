@@ -55,6 +55,15 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
 
+# Патченная версия audioplayers_android: оригинал меняет только скорость
+# воспроизведения (mediaPlayer.playbackParams.setSpeed), из-за чего Android
+# по умолчанию сохраняет высоту тона (тайм-стретчинг) — а нам как раз нужен
+# питч-шифт сэмплов пианино через изменение скорости. См.
+# third_party/audioplayers_android_patched.
+dependency_overrides:
+  audioplayers_android:
+    path: third_party/audioplayers_android_patched
+
 flutter_launcher_icons:
   android: true
   ios: true
@@ -82,6 +91,9 @@ flutter:
     - assets/gesys_logo.svg
     - assets/fonts/DejaVuSans.ttf
     - assets/fonts/DejaVuSans-Bold.ttf
+    - assets/piano_samples/
+    - assets/electric_piano_samples/
+    - assets/synth_samples/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

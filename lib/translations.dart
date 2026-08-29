@@ -77,10 +77,20 @@ const _strings = <String, Map<AppLanguage, String>>{
     AppLanguage.uz: 'Ovoz',
     AppLanguage.en: 'Sound',
   },
-  'soundDuration': {
-    AppLanguage.ru: 'Длительность звука',
-    AppLanguage.uz: 'Ovoz davomiyligi',
-    AppLanguage.en: 'Sound duration',
+  'keySizeSmaller': {
+    AppLanguage.ru: 'Мельче клавиши',
+    AppLanguage.uz: 'Klavishlar kichikroq',
+    AppLanguage.en: 'Smaller keys',
+  },
+  'keySizeBigger': {
+    AppLanguage.ru: 'Крупнее клавиши',
+    AppLanguage.uz: 'Klavishlar kattaroq',
+    AppLanguage.en: 'Bigger keys',
+  },
+  'developer': {
+    AppLanguage.ru: 'Разработчик',
+    AppLanguage.uz: 'Dasturchi',
+    AppLanguage.en: 'Developer',
   },
 };
 
@@ -92,9 +102,9 @@ const _languageLabels = {
 
 const _soundStyleLabels = {
   ToneStyle.classicPiano: {
-    AppLanguage.ru: 'Пианино классик',
-    AppLanguage.uz: 'Pianino klassik',
-    AppLanguage.en: 'Classic piano',
+    AppLanguage.ru: 'Пианино (настоящий звук)',
+    AppLanguage.uz: 'Pianino (haqiqiy tovush)',
+    AppLanguage.en: 'Piano (real sound)',
   },
   ToneStyle.electricPiano: {
     AppLanguage.ru: 'Электро',

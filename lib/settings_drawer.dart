@@ -67,22 +67,6 @@ class SettingsDrawer extends ConsumerWidget {
                 },
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: Row(
-                children: [
-                  Expanded(child: Text(lang.tr('soundDuration'))),
-                  Text('${settings.soundDuration.toStringAsFixed(1)}x'),
-                ],
-              ),
-            ),
-            Slider(
-              value: settings.soundDuration,
-              min: 0.4,
-              max: 2.0,
-              divisions: 16,
-              onChanged: controller.setSoundDuration,
-            ),
             ListTile(
               title: Text(lang.tr('theme')),
               trailing: IconButton(
@@ -129,12 +113,56 @@ class SettingsDrawer extends ConsumerWidget {
                   final version = snapshot.hasData
                       ? 'v${snapshot.data!.version}+${snapshot.data!.buildNumber}'
                       : '';
-                  return Text(
-                    '${lang.tr('appVersion')} $version',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Theme.of(context).hintColor),
+                  return InkWell(
+                    onTap: () => showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Piano Notation'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${lang.tr('appVersion')} $version'),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('${lang.tr('developer')}: GeSys'),
+                                const SizedBox(width: 6),
+                                SvgPicture.asset('assets/gesys_logo.svg',
+                                    width: 16, height: 16),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Piano samples: Salamander Grand Piano V3 by '
+                              'Alexander Holm (CC BY 3.0)',
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Electric piano / synth samples: FluidR3 GM '
+                              'SoundFont by Frank Wen (MIT)',
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        '${lang.tr('appVersion')} $version',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: Theme.of(context).hintColor),
+                      ),
+                    ),
                   );
                 },
               ),

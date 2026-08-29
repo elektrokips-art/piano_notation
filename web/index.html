@@ -31,6 +31,23 @@
 
   <title>piano_notation</title>
   <link rel="manifest" href="manifest.json">
+
+  <script>
+    // Браузеры по умолчанию сохраняют высоту тона при изменении playbackRate
+    // (HTMLMediaElement.preservesPitch = true) — это ломает питч-шифт сэмплов
+    // пианино, который как раз строится на изменении скорости воспроизведения.
+    // Отключаем сохранение тона для каждого <audio>, прямо перед стартом
+    // воспроизведения.
+    (function () {
+      var origPlay = HTMLMediaElement.prototype.play;
+      HTMLMediaElement.prototype.play = function () {
+        try { this.preservesPitch = false; } catch (e) {}
+        try { this.mozPreservesPitch = false; } catch (e) {}
+        try { this.webkitPreservesPitch = false; } catch (e) {}
+        return origPlay.apply(this, arguments);
+      };
+    })();
+  </script>
 </head>
 <body>
   <!--

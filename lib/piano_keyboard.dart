@@ -27,6 +27,8 @@ class PianoKeyboard extends StatefulWidget {
   final int startMidi;
   final int endMidi;
   final double height;
+  // Ширина белой клавиши — управляется снаружи кнопками +/- (см.
+  // example_usage.dart), как и scrollController ниже.
   final double whiteKeyWidth;
   // Внешний контроллер скролла — чтобы можно было листать клавиатуру
   // кнопками снаружи (см. example_usage.dart), а не перетаскиванием по
@@ -163,44 +165,190 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
     ];
 
     return SizedBox(
-      height: widget.height,
-      child: Scrollbar(
-        controller: _scrollController,
-        thumbVisibility: true,
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          // Перетаскивание по клавишам — это глиссандо, не скролл. Листать
-          // клавиатуру можно только скроллбаром или кнопками снаружи.
-          physics: const NeverScrollableScrollPhysics(),
-          child: Listener(
-            behavior: HitTestBehavior.opaque,
-            onPointerDown: (e) => _updatePointer(
-              e.pointer,
-              _keyAt(e.localPosition, layout, whiteKeyWidth, blackKeyWidth,
-                  blackKeyHeight, totalWidth),
-            ),
-            onPointerMove: (e) => _updatePointer(
-              e.pointer,
-              _keyAt(e.localPosition, layout, whiteKeyWidth, blackKeyWidth,
-                  blackKeyHeight, totalWidth),
-            ),
-            onPointerUp: (e) => _releasePointer(e.pointer),
-            onPointerCancel: (e) => _releasePointer(e.pointer),
-            child: SizedBox(
-              width: totalWidth,
-              height: widget.height,
-              child: Stack(
-                children: [
-                  Row(children: whiteKeyWidgets),
-                  ...blackKeyWidgets,
-                ],
+      height: widget.height + _miniMapHeight,
+      child: Column(
+        children: [
+          _MiniKeyboardNav(
+            layout: layout,
+            totalWidth: totalWidth,
+            scrollController: _scrollController,
+            height: _miniMapHeight,
+          ),
+          SizedBox(
+            height: widget.height,
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              // Листание клавиатуры перетаскиванием отключено (это
+              // глиссандо), а полосу листают через мини-навигатор сверху —
+              // поэтому сам скроллбар не должен реагировать на касания.
+              // Иначе он мог перехватывать тап у самого нижнего края
+              // клавиш (где подписи нот), не давая нажать.
+              interactive: false,
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                // Перетаскивание по клавишам — это глиссандо, не скролл.
+                // Листать клавиатуру можно только мини-навигатором сверху.
+                physics: const NeverScrollableScrollPhysics(),
+                child: Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: (e) => _updatePointer(
+                    e.pointer,
+                    _keyAt(e.localPosition, layout, whiteKeyWidth,
+                        blackKeyWidth, blackKeyHeight, totalWidth),
+                  ),
+                  onPointerMove: (e) => _updatePointer(
+                    e.pointer,
+                    _keyAt(e.localPosition, layout, whiteKeyWidth,
+                        blackKeyWidth, blackKeyHeight, totalWidth),
+                  ),
+                  onPointerUp: (e) => _releasePointer(e.pointer),
+                  onPointerCancel: (e) => _releasePointer(e.pointer),
+                  child: SizedBox(
+                    width: totalWidth,
+                    height: widget.height,
+                    child: Stack(
+                      children: [
+                        Row(children: whiteKeyWidgets),
+                        ...blackKeyWidgets,
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
+  }
+}
+
+const _miniMapHeight = 28.0;
+
+/// Полоска-навигатор над клавиатурой: уменьшенная схема всей клавиатуры
+/// (88 клавиш) с подсвеченным окном текущей видимой области. Тап или
+/// протягивание пальцем по полоске сразу листает основную клавиатуру —
+/// удобнее, чем стрелки листания по чуть-чуть.
+class _MiniKeyboardNav extends StatelessWidget {
+  final _KeyLayout layout;
+  final double totalWidth;
+  final ScrollController scrollController;
+  final double height;
+
+  const _MiniKeyboardNav({
+    required this.layout,
+    required this.totalWidth,
+    required this.scrollController,
+    required this.height,
+  });
+
+  // На самом первом кадре ScrollController уже "подключён" (hasClients),
+  // но сам Scrollable ещё не прошёл ни одного layout — viewportDimension
+  // в этот момент не установлен, и обращение к нему падает с null-check
+  // ошибкой. hasPixels/hasContentDimensions гарантируют, что хотя бы один
+  // layout уже случился.
+  bool get _isReady =>
+      scrollController.hasClients &&
+      scrollController.position.hasViewportDimension &&
+      scrollController.position.hasContentDimensions;
+
+  void _scrollToLocalX(double localX, double scale) {
+    if (!_isReady) return;
+    final position = scrollController.position;
+    final target = (localX / scale) - position.viewportDimension / 2;
+    scrollController.jumpTo(
+      target.clamp(position.minScrollExtent, position.maxScrollExtent),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stripWidth = constraints.maxWidth;
+        final scale = stripWidth / totalWidth;
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (d) => _scrollToLocalX(d.localPosition.dx, scale),
+          onHorizontalDragUpdate: (d) => _scrollToLocalX(d.localPosition.dx, scale),
+          child: AnimatedBuilder(
+            animation: scrollController,
+            builder: (context, _) {
+              final ready = _isReady;
+              return CustomPaint(
+                size: Size(stripWidth, height),
+                painter: _MiniMapPainter(
+                  layout: layout,
+                  totalWidth: totalWidth,
+                  scale: scale,
+                  offset: ready ? scrollController.offset : 0,
+                  viewport: ready ? scrollController.position.viewportDimension : stripWidth,
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MiniMapPainter extends CustomPainter {
+  final _KeyLayout layout;
+  final double totalWidth;
+  final double scale;
+  final double offset;
+  final double viewport;
+
+  _MiniMapPainter({
+    required this.layout,
+    required this.totalWidth,
+    required this.scale,
+    required this.offset,
+    required this.viewport,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = Colors.grey.shade300);
+
+    final whiteKeyWidthMini = size.width / layout.whiteMidis.length;
+    final linePaint = Paint()
+      ..color = Colors.grey.shade500
+      ..strokeWidth = 1;
+    for (var i = 1; i < layout.whiteMidis.length; i++) {
+      final x = i * whiteKeyWidthMini;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), linePaint);
+    }
+
+    final blackPaint = Paint()..color = Colors.black87;
+    final realWhiteKeyWidth = totalWidth / layout.whiteMidis.length;
+    for (final b in layout.blackKeys) {
+      final x = b.afterWhiteIndex * realWhiteKeyWidth * scale;
+      canvas.drawRect(
+        Rect.fromLTWH(x - 1.5, 0, 3, size.height * 0.6),
+        blackPaint,
+      );
+    }
+
+    final windowRect = Rect.fromLTWH(offset * scale, 0, viewport * scale, size.height);
+    canvas.drawRect(windowRect, Paint()..color = Colors.blue.withValues(alpha: 0.35));
+    canvas.drawRect(
+      windowRect,
+      Paint()
+        ..color = Colors.blue
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _MiniMapPainter oldDelegate) {
+    return oldDelegate.offset != offset ||
+        oldDelegate.viewport != viewport ||
+        oldDelegate.scale != scale;
   }
 }
 

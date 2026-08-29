@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'note_models.dart';
-import 'quantizer.dart' show ticksPerMeasure;
 
 /// Состояние режима «играть по нотам»: пьеса загружена из PDF (см.
 /// notation_file.dart), плеер идёт по нотам по очереди — либо ждёт нужную
@@ -52,11 +51,14 @@ class PracticeController extends Notifier<PracticeState> {
     );
   }
 
-  /// Нота, не влезшая в такт целиком, режется квантайзером на границе такта
-  /// и продолжается новой нотой той же высоты в начале следующего —
-  /// правильно для отрисовки (см. quantizer.dart), но это одна и та же
-  /// сыгранная нота, а не две отдельные: в тренажёре её нельзя требовать
-  /// нажать дважды. Склеиваем такие соседние обрывки обратно перед игрой.
+  /// Нота, реально сыгранная дольше одной разрешённой длительности (см.
+  /// quantizer.dart — максимум это целая нота на такт, и резка всегда идёт
+  /// по границе такта, но не только — доступны лишь длительности
+  /// 16-я/8-я/четверть/половина/целая, так что и внутри такта остаток может
+  /// не улечься в одну из них), режется на несколько соседних QuantizedNote
+  /// той же высоты — на стане они соединяются лигой (см. staff_painter.dart
+  /// _drawTies), а не звучат отдельными нажатиями. В тренажёре по той же
+  /// причине их нельзя требовать нажать дважды — склеиваем перед игрой.
   static List<QuantizedNote> _mergeTiedNotes(List<QuantizedNote> notes) {
     final merged = <QuantizedNote>[];
     for (final n in notes) {
@@ -65,11 +67,7 @@ class PracticeController extends Notifier<PracticeState> {
           !last.isRest &&
           !n.isRest &&
           setEquals(last.midiPitches.toSet(), n.midiPitches.toSet()) &&
-          last.startTick + last.durationTicks == n.startTick &&
-          // квантайзер режет ноту только ровно на границе такта — если
-          // продолжение начинается не с начала такта, это две отдельные
-          // подряд сыгранные ноты той же высоты, а не одна разрезанная
-          n.startTick % ticksPerMeasure == 0;
+          last.startTick + last.durationTicks == n.startTick;
       if (isContinuation) {
         merged[merged.length - 1] = QuantizedNote(
           midiPitches: last.midiPitches,

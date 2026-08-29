@@ -64,7 +64,16 @@ class PianoKeyboard extends StatefulWidget {
 class _PianoKeyboardState extends State<PianoKeyboard> {
   ScrollController? _ownScrollController;
   final _pointerToMidi = <int, int>{};
+  // Точка, откуда отсчитывается дрожание пальца (см. _updatePointer) —
+  // сбрасывается на текущую позицию при каждом настоящем пересчёте клавиши,
+  // так что накопленный медленный дрейф всё равно даст сработать глиссандо.
+  final _pointerAnchor = <int, Offset>{};
   final Set<int> _activeMidis = {};
+  // При долгом удержании клавиши палец/мышь неизбежно чуть дрожит; без
+  // этого запаса такое дрожание на миг пересекало границу соседней клавиши
+  // и глиссандо-логика ниже читала это как "отпустили — нажали снова",
+  // из-за чего одно долгое нажатие иногда записывалось как две ноты подряд.
+  static const double _glissandoThreshold = 8.0;
 
   ScrollController get _scrollController =>
       widget.scrollController ?? (_ownScrollController ??= ScrollController());
@@ -113,7 +122,12 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
     return layout.whiteMidis[whiteIndex];
   }
 
-  void _updatePointer(int pointer, int? midi) {
+  void _updatePointer(int pointer, Offset local, int? Function(Offset) keyAt) {
+    final anchor = _pointerAnchor[pointer];
+    if (anchor != null && (local - anchor).distance < _glissandoThreshold) return;
+    _pointerAnchor[pointer] = local;
+
+    final midi = keyAt(local);
     final prev = _pointerToMidi[pointer];
     if (prev == midi) return;
     if (prev != null) widget.onKeyUp(prev);
@@ -131,6 +145,7 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
   }
 
   void _releasePointer(int pointer) {
+    _pointerAnchor.remove(pointer);
     final midi = _pointerToMidi.remove(pointer);
     if (midi == null) return;
     widget.onKeyUp(midi);
@@ -209,12 +224,14 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                   behavior: HitTestBehavior.opaque,
                   onPointerDown: (e) => _updatePointer(
                     e.pointer,
-                    _keyAt(e.localPosition, layout, whiteKeyWidth,
+                    e.localPosition,
+                    (local) => _keyAt(local, layout, whiteKeyWidth,
                         blackKeyWidth, blackKeyHeight, totalWidth),
                   ),
                   onPointerMove: (e) => _updatePointer(
                     e.pointer,
-                    _keyAt(e.localPosition, layout, whiteKeyWidth,
+                    e.localPosition,
+                    (local) => _keyAt(local, layout, whiteKeyWidth,
                         blackKeyWidth, blackKeyHeight, totalWidth),
                   ),
                   onPointerUp: (e) => _releasePointer(e.pointer),

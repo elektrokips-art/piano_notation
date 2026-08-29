@@ -193,6 +193,60 @@ class StaffPainter extends CustomPainter {
     for (final slots in measureSlots) {
       _drawMeasureSlots(canvas, staffBottomY, slots, clef);
     }
+    _drawTies(canvas, staffBottomY, lineSlots, clef);
+  }
+
+  /// Квантайзер режет ноту, реально сыгранную дольше, чем влезает в одну
+  /// разрешённую длительность (см. quantizer.dart — максимум это целая
+  /// нота на такт, а ещё резка идёт строго по границе такта), на несколько
+  /// соседних QuantizedNote той же высоты. Без вязки лигой это выглядело бы
+  /// как два отдельных нажатия — рисуем дугу-лигу между такими соседними
+  /// кусками, как в обычной нотной гравировке для одной удержанной ноты.
+  void _drawTies(
+      Canvas canvas, double staffBottomY, List<_NoteSlot> lineSlots, Clef clef) {
+    for (var i = 0; i < lineSlots.length - 1; i++) {
+      final a = lineSlots[i];
+      final b = lineSlots[i + 1];
+      if (a.item.isRest || b.item.isRest) continue;
+      if (a.item.startTick + a.item.durationTicks != b.item.startTick) continue;
+      if (!_samePitches(a.item.midiPitches, b.item.midiPitches)) continue;
+      for (final p in a.item.midiPitches) {
+        final cy1 = _cyFor(p, a.shiftOctaves, staffBottomY, clef);
+        final cy2 = _cyFor(p, b.shiftOctaves, staffBottomY, clef);
+        final displayStep = staffPositionFor(p, clef).step - a.shiftOctaves * 7;
+        _drawTie(canvas, Offset(a.cx, cy1), Offset(b.cx, cy2), displayStep < 4);
+      }
+    }
+  }
+
+  bool _samePitches(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    final sa = [...a]..sort();
+    final sb = [...b]..sort();
+    for (var i = 0; i < sa.length; i++) {
+      if (sa[i] != sb[i]) return false;
+    }
+    return true;
+  }
+
+  /// Дуга-лига под/над двумя головками нот — снизу, если штиль такой ноты
+  /// обычно смотрит вверх (нота ниже середины стана), иначе сверху, чтобы
+  /// не пересекать штиль (обычное правило гравировки).
+  void _drawTie(Canvas canvas, Offset p1, Offset p2, bool below) {
+    final side = below ? 1 : -1;
+    final start = Offset(p1.dx + _noteRx, p1.dy + side * 3);
+    final end = Offset(p2.dx - _noteRx, p2.dy + side * 3);
+    final mid = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2 + side * 7);
+    final path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..quadraticBezierTo(mid.dx, mid.dy, end.dx, end.dy);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF23222A)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.6,
+    );
   }
 
   static const int _highLedgerLimit = 14; // 3 добавочные линейки над станом

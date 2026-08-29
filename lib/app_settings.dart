@@ -12,29 +12,40 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 const _languageKey = 'settings.language';
 const _themeModeKey = 'settings.themeMode';
 const _soundStyleKey = 'settings.soundStyle';
+const _practiceModeKey = 'settings.practiceMode';
 
 enum AppLanguage { ru, uz, en }
+
+/// Как ведёт себя режим «играть по нотам» (загруженная через PDF пьеса):
+/// [waitForKey] — подсвечивает следующую ноту и ждёт, пока не нажмут именно
+/// её (тренажёр); [autoPlay] — проигрывает сама, подсвечивая клавиши по
+/// очереди в темпе пьесы (демонстрация).
+enum PracticeMode { waitForKey, autoPlay }
 
 class AppSettings {
   final AppLanguage language;
   final ThemeMode themeMode;
   final ToneStyle soundStyle;
+  final PracticeMode practiceMode;
 
   const AppSettings({
     this.language = AppLanguage.ru,
     this.themeMode = ThemeMode.light,
     this.soundStyle = ToneStyle.classicPiano,
+    this.practiceMode = PracticeMode.waitForKey,
   });
 
   AppSettings copyWith({
     AppLanguage? language,
     ThemeMode? themeMode,
     ToneStyle? soundStyle,
+    PracticeMode? practiceMode,
   }) {
     return AppSettings(
       language: language ?? this.language,
       themeMode: themeMode ?? this.themeMode,
       soundStyle: soundStyle ?? this.soundStyle,
+      practiceMode: practiceMode ?? this.practiceMode,
     );
   }
 }
@@ -48,6 +59,8 @@ class AppSettingsController extends Notifier<AppSettings> {
       themeMode: _enumFromPrefs(prefs, _themeModeKey, ThemeMode.values, ThemeMode.light),
       soundStyle:
           _enumFromPrefs(prefs, _soundStyleKey, ToneStyle.values, ToneStyle.classicPiano),
+      practiceMode: _enumFromPrefs(
+          prefs, _practiceModeKey, PracticeMode.values, PracticeMode.waitForKey),
     );
   }
 
@@ -74,6 +87,11 @@ class AppSettingsController extends Notifier<AppSettings> {
   void setSoundStyle(ToneStyle style) {
     state = state.copyWith(soundStyle: style);
     ref.read(sharedPreferencesProvider).setInt(_soundStyleKey, style.index);
+  }
+
+  void setPracticeMode(PracticeMode mode) {
+    state = state.copyWith(practiceMode: mode);
+    ref.read(sharedPreferencesProvider).setInt(_practiceModeKey, mode.index);
   }
 }
 

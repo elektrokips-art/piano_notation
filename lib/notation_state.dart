@@ -51,6 +51,7 @@ class NotationController extends Notifier<NotationState> {
         e.offTime ??= now;
       }
       state = state.copyWith(recording: false, events: [...state.events]);
+      renderNotes();
     } else {
       state = state.copyWith(recording: true, events: [], clearMeasures: true);
     }
@@ -71,6 +72,7 @@ class NotationController extends Notifier<NotationState> {
         e.offTime ??= now;
       }
       state = state.copyWith(sustain: false, events: [...state.events]);
+      if (state.recording) renderNotes();
     } else {
       state = state.copyWith(sustain: true);
     }
@@ -104,10 +106,19 @@ class NotationController extends Notifier<NotationState> {
     }
     // events изменены мутацией — форсируем ребилд новой ссылкой на список.
     state = state.copyWith(events: [...state.events]);
+    renderNotes(); // живое обновление нотного стана прямо во время записи
   }
 
   void renderNotes() {
     state = state.copyWith(measures: quantize(state.events, state.bpm));
+  }
+
+  /// Загружает готовую пьесу (из PDF, см. notation_file.dart) на нотный
+  /// стан — как результат renderNotes(), только без собственной записи.
+  /// Используется режимом «играть по нотам» (см. practice_state.dart).
+  void loadPiece(List<List<QuantizedNote>> measures, int bpm) {
+    state = state.copyWith(
+        recording: false, events: [], measures: measures, bpm: bpm);
   }
 }
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
@@ -6,6 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'app_settings.dart';
 import 'note_models.dart';
+import 'notation_file.dart';
 import 'staff_painter.dart';
 
 const _pdfTitle = {
@@ -75,6 +77,18 @@ Future<Uint8List> renderStaffToPdf({
       ),
     ),
   );
+
+  // Вкладываем сами ноты (JSON) внутрь PDF — так один и тот же файл можно
+  // и распечатать, и открыть заново в приложении для режима «играть по
+  // нотам» (см. notation_file.dart и example_usage.dart _openPiece).
+  PdfaAttachedFiles(doc.document, [
+    PdfaAttachedFile(
+      name: notationFileMarker,
+      data: jsonEncode(notationToJson(measures, bpm)),
+      subType: '/application/json',
+      AFRelationship: '/Data',
+    ),
+  ]);
 
   return doc.save();
 }

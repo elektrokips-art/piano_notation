@@ -71,6 +71,29 @@ class SettingsDrawer extends ConsumerWidget {
               ),
             ),
             ListTile(
+              leading: Tooltip(
+                message: lang.tr('practiceModeWaitForKey'),
+                child: Icon(Icons.piano, color: Theme.of(context).colorScheme.primary),
+              ),
+              trailing: DropdownButton<PracticeMode>(
+                value: settings.practiceMode,
+                underline: const SizedBox.shrink(),
+                items: [
+                  DropdownMenuItem(
+                    value: PracticeMode.waitForKey,
+                    child: Text(lang.tr('practiceModeWaitForKey')),
+                  ),
+                  DropdownMenuItem(
+                    value: PracticeMode.autoPlay,
+                    child: Text(lang.tr('practiceModeAutoPlay')),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) controller.setPracticeMode(value);
+                },
+              ),
+            ),
+            ListTile(
               title: Text(lang.tr('theme')),
               trailing: IconButton(
                 icon: Icon(settings.themeMode == ThemeMode.dark

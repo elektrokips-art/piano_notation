@@ -35,6 +35,10 @@ class PianoKeyboard extends StatefulWidget {
   // клавишам: перетаскивание по клавишам уже занято глиссандо и конфликтует
   // со скроллом (ноты залипают на полпути).
   final ScrollController? scrollController;
+  // Ноты, нажатые не пальцем/мышью по этому виджету, а снаружи (например,
+  // физической клавиатурой компьютера — см. example_usage.dart) — тоже
+  // подсвечиваются, чтобы визуально было видно, что клавиша звучит.
+  final Set<int> externalActiveMidis;
 
   const PianoKeyboard({
     super.key,
@@ -45,6 +49,7 @@ class PianoKeyboard extends StatefulWidget {
     this.height = 380,
     this.whiteKeyWidth = 54,
     this.scrollController,
+    this.externalActiveMidis = const {},
   });
 
   @override
@@ -138,6 +143,8 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
     final blackKeyHeight = widget.height * 0.6;
     final layout = _computeLayout();
     final totalWidth = layout.whiteMidis.length * whiteKeyWidth;
+    bool isPressed(int midi) =>
+        _activeMidis.contains(midi) || widget.externalActiveMidis.contains(midi);
 
     final whiteKeyWidgets = [
       for (final midi in layout.whiteMidis)
@@ -146,7 +153,7 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
           height: widget.height,
           isBlack: false,
           label: _noteName(midi),
-          pressed: _activeMidis.contains(midi),
+          pressed: isPressed(midi),
         ),
     ];
 
@@ -159,7 +166,7 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
             height: blackKeyHeight,
             isBlack: true,
             label: _noteName(b.midi),
-            pressed: _activeMidis.contains(b.midi),
+            pressed: isPressed(b.midi),
           ),
         ),
     ];

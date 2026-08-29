@@ -147,7 +147,7 @@ class _NotationExampleScreenState
                   ),
                   Positioned(
                     right: 16,
-                    bottom: 16,
+                    bottom: 6,
                     child: FloatingActionButton.small(
                       heroTag: 'sustainPedal',
                       onPressed: _onToggleSustain,
@@ -162,7 +162,7 @@ class _NotationExampleScreenState
                   ),
                   Positioned(
                     left: 16,
-                    bottom: 16,
+                    bottom: 6,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

@@ -51,7 +51,10 @@ class SettingsDrawer extends ConsumerWidget {
               ),
             ),
             ListTile(
-              title: Text(lang.tr('soundStyle')),
+              leading: Tooltip(
+                message: lang.tr('soundStyle'),
+                child: Icon(Icons.music_note, color: Theme.of(context).colorScheme.primary),
+              ),
               trailing: DropdownButton<ToneStyle>(
                 value: settings.soundStyle,
                 underline: const SizedBox.shrink(),

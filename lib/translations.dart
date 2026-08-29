@@ -102,9 +102,9 @@ const _languageLabels = {
 
 const _soundStyleLabels = {
   ToneStyle.classicPiano: {
-    AppLanguage.ru: 'Пианино (настоящий звук)',
-    AppLanguage.uz: 'Pianino (haqiqiy tovush)',
-    AppLanguage.en: 'Piano (real sound)',
+    AppLanguage.ru: 'Пиано',
+    AppLanguage.uz: 'Pianino',
+    AppLanguage.en: 'Piano',
   },
   ToneStyle.electricPiano: {
     AppLanguage.ru: 'Электро',

@@ -51,14 +51,16 @@ class PracticeController extends Notifier<PracticeState> {
     );
   }
 
-  /// Нота, реально сыгранная дольше одной разрешённой длительности (см.
-  /// quantizer.dart — максимум это целая нота на такт, и резка всегда идёт
-  /// по границе такта, но не только — доступны лишь длительности
-  /// 16-я/8-я/четверть/половина/целая, так что и внутри такта остаток может
-  /// не улечься в одну из них), режется на несколько соседних QuantizedNote
-  /// той же высоты — на стане они соединяются лигой (см. staff_painter.dart
+  /// Нота, реально сыгранная дольше одной разрешённой длительности,
+  /// режется квантайзером на несколько соседних QuantizedNote той же
+  /// высоты — на стане они соединяются лигой (см. staff_painter.dart
   /// _drawTies), а не звучат отдельными нажатиями. В тренажёре по той же
   /// причине их нельзя требовать нажать дважды — склеиваем перед игрой.
+  /// Признак продолжения — именно QuantizedNote.tied, проставленный самим
+  /// квантайзером (quantizer.dart), а не угаданный здесь по времени/высоте:
+  /// угадывание (совпадение высоты + нулевой зазор) путало склейку с
+  /// настоящим повтором одной и той же ноты без паузы — из-за него
+  /// перестали засчитываться 2-3 быстрых нажатия подряд.
   static List<QuantizedNote> _mergeTiedNotes(List<QuantizedNote> notes) {
     final merged = <QuantizedNote>[];
     for (final n in notes) {
@@ -66,6 +68,7 @@ class PracticeController extends Notifier<PracticeState> {
       final isContinuation = last != null &&
           !last.isRest &&
           !n.isRest &&
+          n.tied &&
           setEquals(last.midiPitches.toSet(), n.midiPitches.toSet()) &&
           last.startTick + last.durationTicks == n.startTick;
       if (isContinuation) {

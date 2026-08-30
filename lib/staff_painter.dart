@@ -172,6 +172,7 @@ class StaffPainter extends CustomPainter {
           midiPitches: item.midiPitches.where(belongs).toList(),
           startTick: item.startTick,
           durationTicks: item.durationTicks,
+          tied: item.tied,
         );
         slots.add(_NoteSlot(split, tx + w / 2, cursor ~/ ticksPerBeat));
         tx += w;
@@ -207,6 +208,11 @@ class StaffPainter extends CustomPainter {
     for (var i = 0; i < lineSlots.length - 1; i++) {
       final a = lineSlots[i];
       final b = lineSlots[i + 1];
+      // b.item.tied — это и есть настоящий признак "это тот же кусок ноты,
+      // не новое нажатие" (проставлен в quantizer.dart, а не угадан здесь по
+      // времени/высоте — угадывание путало склейку с настоящим повтором той
+      // же ноты без паузы, см. practice_state.dart).
+      if (!b.item.tied) continue;
       if (a.item.isRest || b.item.isRest) continue;
       if (a.item.startTick + a.item.durationTicks != b.item.startTick) continue;
       if (!_samePitches(a.item.midiPitches, b.item.midiPitches)) continue;

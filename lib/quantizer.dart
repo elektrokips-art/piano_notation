@@ -91,8 +91,11 @@ List<List<QuantizedNote>> quantize(List<NoteEvent> events, int bpm) {
     }
 
     // сама нота/аккорд — не длиннее остатка такта; если не влезает целиком,
-    // обрезаем по границе такта и продолжаем в следующем
+    // обрезаем по границе такта и продолжаем в следующем. Первый кусок —
+    // настоящее нажатие, все следующие в этом же while — не новые нажатия,
+    // а его же продолжение (см. QuantizedNote.tied).
     var remaining = noteBudget[i];
+    var firstPiece = true;
     while (remaining > 0) {
       final untilMeasure = ticksPerMeasure - (cursor % ticksPerMeasure);
       final want = untilMeasure < remaining ? untilMeasure : remaining;
@@ -102,7 +105,9 @@ List<List<QuantizedNote>> quantize(List<NoteEvent> events, int bpm) {
         midiPitches: c.pitches,
         startTick: cursor,
         durationTicks: d,
+        tied: !firstPiece,
       ));
+      firstPiece = false;
       cursor += d;
       remaining -= d;
     }

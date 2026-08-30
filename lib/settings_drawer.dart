@@ -39,6 +39,13 @@ class SettingsDrawer extends ConsumerWidget {
               ),
             ),
             const Divider(height: 1),
+            // Пунктов настроек стало много (темп, стан, тренажёр и т.д.) —
+            // на невысоком экране они не помещались и обрезались без
+            // возможности прокрутить; лого/версия внизу остаются на месте
+            // (не внутри прокрутки), а середина скроллится сама по себе.
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(children: [
             ListTile(
               title: Text(lang.tr('language')),
               trailing: DropdownButton<AppLanguage>(
@@ -149,7 +156,9 @@ class SettingsDrawer extends ConsumerWidget {
                 onPressed: controller.toggleTheme,
               ),
             ),
-            const Spacer(),
+                ]),
+              ),
+            ),
             const Divider(height: 1),
             InkWell(
               onTap: () =>

@@ -24,6 +24,27 @@ class PianoSound {
     // setPlayerMode(lowLatency) всё равно no-op, а прогревать сотни
     // плееров впустую — только тратить AudioContext-ресурсы браузера.
     if (kIsWeb) return;
+    // По умолчанию каждый плеер при старте запрашивает аудиофокус
+    // (AUDIOFOCUS_GAIN на Android, эксклюзивная сессия на iOS) — и тогда
+    // вторая нажатая клавиша отнимает фокус у первой, а плагин в ответ
+    // глушит её: аккорд из двух нот звучал как одна. Ноты — это звуки
+    // одного инструмента, они должны смешиваться, поэтому фокус не
+    // запрашиваем вовсе.
+    try {
+      await AudioPlayer.global.setAudioContext(AudioContext(
+        android: const AudioContextAndroid(
+          audioFocus: AndroidAudioFocus.none,
+          usageType: AndroidUsageType.media,
+          contentType: AndroidContentType.music,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.playback,
+          options: const {AVAudioSessionOptions.mixWithOthers},
+        ),
+      ));
+    } catch (_) {
+      // На платформах без поддержки AudioContext оставляем как есть.
+    }
     final assetPaths = <String>{
       for (final file in pianoSampleFiles.values) 'piano_samples/$file',
       for (var midi = 21; midi <= 108; midi++) ...[

@@ -4,27 +4,27 @@ import 'tone_synth.dart';
 const _strings = <String, Map<AppLanguage, String>>{
   'appTitle': {
     AppLanguage.ru: 'Играй → ноты',
-    AppLanguage.uz: 'Chal → notalar',
+    AppLanguage.uz: 'Çal → notalar',
     AppLanguage.en: 'Play → notes',
   },
   'record': {
     AppLanguage.ru: 'Запись',
-    AppLanguage.uz: 'Yozish',
+    AppLanguage.uz: 'Yoziş',
     AppLanguage.en: 'Record',
   },
   'stop': {
     AppLanguage.ru: 'Стоп',
-    AppLanguage.uz: 'Toʻxtatish',
+    AppLanguage.uz: 'Tóxtatiş',
     AppLanguage.en: 'Stop',
   },
   'renderNotes': {
     AppLanguage.ru: 'Собрать ноты',
-    AppLanguage.uz: 'Notalarni yigʻish',
+    AppLanguage.uz: 'Notalarni yiǵiş',
     AppLanguage.en: 'Build notes',
   },
   'reset': {
     AppLanguage.ru: 'Сброс',
-    AppLanguage.uz: 'Tozalash',
+    AppLanguage.uz: 'Tozalaş',
     AppLanguage.en: 'Reset',
   },
   'sustainPedal': {
@@ -39,12 +39,12 @@ const _strings = <String, Map<AppLanguage, String>>{
   },
   'savePdf': {
     AppLanguage.ru: 'Сохранить PDF',
-    AppLanguage.uz: 'PDF ni saqlash',
+    AppLanguage.uz: 'PDF ni saqlaş',
     AppLanguage.en: 'Save PDF',
   },
   'sharePdf': {
     AppLanguage.ru: 'Поделиться PDF',
-    AppLanguage.uz: 'PDF ni ulashish',
+    AppLanguage.uz: 'PDF ni ulaşiş',
     AppLanguage.en: 'Share PDF',
   },
   'pdfSaved': {
@@ -54,7 +54,7 @@ const _strings = <String, Map<AppLanguage, String>>{
   },
   'placeholder': {
     AppLanguage.ru: 'здесь появятся ноты после записи',
-    AppLanguage.uz: 'yozuvdan keyin bu yerda notalar chiqadi',
+    AppLanguage.uz: 'yozuvdan keyin bu yerda notalar çiqadi',
     AppLanguage.en: 'notes will appear here after recording',
   },
   'settings': {
@@ -74,12 +74,12 @@ const _strings = <String, Map<AppLanguage, String>>{
   },
   'themeLight': {
     AppLanguage.ru: 'Светлая',
-    AppLanguage.uz: 'Yorugʻ',
+    AppLanguage.uz: 'Yoruǵ',
     AppLanguage.en: 'Light',
   },
   'themeDark': {
     AppLanguage.ru: 'Тёмная',
-    AppLanguage.uz: 'Qorongʻu',
+    AppLanguage.uz: 'Qoronǵu',
     AppLanguage.en: 'Dark',
   },
   'appVersion': {
@@ -104,17 +104,17 @@ const _strings = <String, Map<AppLanguage, String>>{
   },
   'stopPlayback': {
     AppLanguage.ru: 'Стоп (сначала)',
-    AppLanguage.uz: 'Toʻxtatish (boshidan)',
+    AppLanguage.uz: 'Tóxtatiş (boşidan)',
     AppLanguage.en: 'Stop (restart)',
   },
   'practiceHint': {
     AppLanguage.ru: 'Играйте',
-    AppLanguage.uz: 'Chaling',
+    AppLanguage.uz: 'Çaling',
     AppLanguage.en: 'Play',
   },
   'staffModeLabel': {
     AppLanguage.ru: 'Нотный стан',
-    AppLanguage.uz: 'Notalar toʻri',
+    AppLanguage.uz: 'Notalar tóri',
     AppLanguage.en: 'Staff',
   },
   'staffModeSingle': {
@@ -124,7 +124,7 @@ const _strings = <String, Map<AppLanguage, String>>{
   },
   'staffModeGrand': {
     AppLanguage.ru: 'Про (2 руки)',
-    AppLanguage.uz: 'Pro (2 qoʻl)',
+    AppLanguage.uz: 'Pro (2 qól)',
     AppLanguage.en: 'Pro (2 hands)',
   },
   'tempo': {
@@ -134,57 +134,57 @@ const _strings = <String, Map<AppLanguage, String>>{
   },
   'openPiece': {
     AppLanguage.ru: 'Открыть пьесу (PDF)',
-    AppLanguage.uz: 'Asar ochish (PDF)',
+    AppLanguage.uz: 'Asar oçiş (PDF)',
     AppLanguage.en: 'Open piece (PDF)',
   },
   'notOurFile': {
     AppLanguage.ru: 'Это не файл Piano Notation — в нём нет нот для тренажёра',
-    AppLanguage.uz: 'Bu Piano Notation fayli emas — trenajyor uchun notalar yoʻq',
+    AppLanguage.uz: 'Bu Piano Notation fayli emas — trenajyor uçun notalar yóq',
     AppLanguage.en: 'Not a Piano Notation file — no notes to practice with',
   },
   'exitPractice': {
     AppLanguage.ru: 'Закрыть пьесу',
-    AppLanguage.uz: 'Asarni yopish',
+    AppLanguage.uz: 'Asarni yopiş',
     AppLanguage.en: 'Close piece',
   },
   'practiceFinished': {
     AppLanguage.ru: 'Пьеса сыграна!',
-    AppLanguage.uz: 'Asar oʻynaldi!',
+    AppLanguage.uz: 'Asar óynaldi!',
     AppLanguage.en: 'Piece complete!',
   },
   'practiceModeWaitForKey': {
     AppLanguage.ru: 'Тренажёр (ждать клавишу)',
-    AppLanguage.uz: 'Trenajyor (klavishni kutish)',
+    AppLanguage.uz: 'Trenajyor (klavişni kutiş)',
     AppLanguage.en: 'Trainer (wait for key)',
   },
   'practiceModeAutoPlay': {
     AppLanguage.ru: 'Автоигра (показ)',
-    AppLanguage.uz: 'Avtomatik ijro (koʻrsatish)',
+    AppLanguage.uz: 'Avtomatik ijro (kórsatiş)',
     AppLanguage.en: 'Auto-play (demo)',
   },
   'hideKeyboard': {
     AppLanguage.ru: 'Скрыть клавиатуру',
-    AppLanguage.uz: 'Klaviaturani yashirish',
+    AppLanguage.uz: 'Klaviaturani yaşiriş',
     AppLanguage.en: 'Hide keyboard',
   },
   'showKeyboard': {
     AppLanguage.ru: 'Показать клавиатуру',
-    AppLanguage.uz: 'Klaviaturani ko\'rsatish',
+    AppLanguage.uz: 'Klaviaturani kórsatiş',
     AppLanguage.en: 'Show keyboard',
   },
   'keySizeSmaller': {
     AppLanguage.ru: 'Мельче клавиши',
-    AppLanguage.uz: 'Klavishlar kichikroq',
+    AppLanguage.uz: 'Klavişlar kiçikroq',
     AppLanguage.en: 'Smaller keys',
   },
   'keySizeBigger': {
     AppLanguage.ru: 'Крупнее клавиши',
-    AppLanguage.uz: 'Klavishlar kattaroq',
+    AppLanguage.uz: 'Klavişlar kattaroq',
     AppLanguage.en: 'Bigger keys',
   },
   'developer': {
     AppLanguage.ru: 'Разработчик',
-    AppLanguage.uz: 'Dasturchi',
+    AppLanguage.uz: 'Dasturçi',
     AppLanguage.en: 'Developer',
   },
 };
@@ -217,6 +217,9 @@ String languageLabel(AppLanguage lang) => _languageLabels[lang]!;
 
 String soundStyleLabel(ToneStyle style, AppLanguage lang) =>
     _soundStyleLabels[style]![lang]!;
+
+/// All translation keys — used by tests to check every language is complete.
+Iterable<String> get translationKeys => _strings.keys;
 
 extension TranslateX on AppLanguage {
   String tr(String key) => _strings[key]?[this] ?? key;

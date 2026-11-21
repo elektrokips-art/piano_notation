@@ -1,0 +1,6 @@
+{
+  "name": "piano-notation-store-assets",
+  "private": true,
+  "description": "Генерация иконки, рекламной картинки и скриншотов для магазинов",
+  "dependencies": { "puppeteer-core": "^24.0.0" }
+}

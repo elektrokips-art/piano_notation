@@ -12,19 +12,25 @@
 - Политика конфиденциальности: [PRIVACY.md](../PRIVACY.md), ссылка для магазинов: https://github.com/elektrokips-art/piano_notation/blob/master/PRIVACY.md
 - Тексты карточки: [STORE_LISTING.md](STORE_LISTING.md)
 
-## 1. Ключ подписи (один раз, делает владелец)
+## 1. Ключ подписи
 
-Пароль придумываешь сам и нигде не публикуешь. **Файл ключа и пароли потерять нельзя** — сделай копию в надёжное место (облако с паролем, флешка).
+Ключ уже создан: `android/upload-keystore.jks`, пароли в `android/key.properties` (оба файла игнорируются git'ом). **Файл ключа и пароли потерять нельзя** — без них нельзя выпускать обновления в RuStore. Сделай копию в надёжное место (облако с паролем, флешка).
+
+Если нужно создать ключ заново (на другом компьютере), команда такая (`keytool` лежит в `jbr\bin` Android Studio; путь к Java показывает `flutter doctor -v`), потом скопируй `android/key.properties.example` в `android/key.properties`:
 
 ```powershell
-keytool -genkeypair -v -keystore C:\Users\$env:USERNAME\upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+keytool -genkeypair -v -keystore android\upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
 ```
 
-(`keytool` лежит в папке `jbr\bin` Android Studio; путь к Java показывает `flutter doctor -v`.)
-
-Потом скопируй `android/key.properties.example` в `android/key.properties` и впиши пароли и путь к `.jks`. Оба файла игнорируются git'ом и в репозиторий не попадут.
-
 ## 2. Сборка
+
+Одной командой (проверка кода, APK, AAB, проверка подписи, копирование файлов в `Desktop\Piano\build`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
+```
+
+Или вручную:
 
 ```powershell
 flutter build appbundle --release   # для Google Play -> build/app/outputs/bundle/release/app-release.aab

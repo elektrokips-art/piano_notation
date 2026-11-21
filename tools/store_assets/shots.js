@@ -149,6 +149,8 @@ async function recordVerified(staffMode, doRecord, expect, tries = 8) {
 }
 
 async function shot(page, name, alreadyScaled = false) {
+  await page.mouse.move(W / 2, 330); // убрать подсказки/подсветку кнопок под курсором
+  await sleep(700);
   if (DSF !== 1 && !alreadyScaled) {
     await page.setViewport({ width: W, height: H, deviceScaleFactor: DSF });
     await sleep(1800);
@@ -193,7 +195,7 @@ async function shot(page, name, alreadyScaled = false) {
   }
 
   if (scenes.includes('settings')) {
-    const { browser, page } = await recordVerified(1, recordTwinkle, expTwinkle);
+    const { browser, page } = await recordVerified(0, recordTwinkle, expTwinkle);
     await tap(page, bar.settings, 900);
     await shot(page, '05_settings');
     await browser.close();

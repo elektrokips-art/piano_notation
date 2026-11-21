@@ -1,0 +1,6 @@
+# Скопируй в android/key.properties (этот файл в git не попадает) и впиши свои значения.
+# Ключ создаётся один раз командой из docs/PUBLISHING.md. Потерять его нельзя.
+storePassword=ПАРОЛЬ_ХРАНИЛИЩА
+keyPassword=ПАРОЛЬ_КЛЮЧА
+keyAlias=upload
+storeFile=../upload-keystore.jks

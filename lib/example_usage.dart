@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
 import 'app_settings.dart';
+import 'help_dialog.dart';
 import 'notation_file.dart';
 import 'notation_state.dart';
 import 'practice_state.dart';
@@ -369,6 +370,11 @@ class _NotationExampleScreenState
                 ? lang.tr('hideKeyboard')
                 : lang.tr('showKeyboard'),
             onPressed: () => setState(() => _keyboardVisible = !_keyboardVisible),
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            tooltip: lang.tr('help'),
+            onPressed: () => showHelpDialog(context, lang),
           ),
           if (practice.active) ...[
             if (settings.practiceMode == PracticeMode.autoPlay) ...[

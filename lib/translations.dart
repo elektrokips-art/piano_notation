@@ -182,6 +182,21 @@ const _strings = <String, Map<AppLanguage, String>>{
     AppLanguage.uz: 'Klavişlar kattaroq',
     AppLanguage.en: 'Bigger keys',
   },
+  'help': {
+    AppLanguage.ru: 'Справка',
+    AppLanguage.uz: 'Yordam',
+    AppLanguage.en: 'Help',
+  },
+  'helpTitle': {
+    AppLanguage.ru: 'Как пользоваться',
+    AppLanguage.uz: 'Qóllanma',
+    AppLanguage.en: 'How to use',
+  },
+  'close': {
+    AppLanguage.ru: 'Закрыть',
+    AppLanguage.uz: 'Yopiş',
+    AppLanguage.en: 'Close',
+  },
   'developer': {
     AppLanguage.ru: 'Разработчик',
     AppLanguage.uz: 'Dasturçi',
